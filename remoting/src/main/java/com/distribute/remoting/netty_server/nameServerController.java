@@ -162,7 +162,7 @@ public class nameServerController {
     }
 
     //添加任务的入口，构造jobBean
-    public void addJobController(String name,String pids,String className,String methodName,String paramType,String params,String cronExpr,Integer shardNum,boolean transfer,boolean reStart,String policy,String jobType){
+    public returnMSG addJobController(String name,String pids,String className,String methodName,String paramType,String params,String cronExpr,Integer shardNum,boolean transfer,boolean reStart,String policy,String jobType){
         jobBean job;
         //是否是主动任务
         if(jobBean.java_normal.equals(jobType)||jobBean.shell_normal.equals(jobType)){
@@ -171,7 +171,16 @@ public class nameServerController {
         else{
             job = new jobBean(new idUtil().nextId(),pids,className,methodName,paramType,params,name,cronExpr,shardNum,transfer,reStart,policy,new Date(),new Date(),0L,jobBean.waiting,0,jobType);
         }
-        mapper.insertJob(job);
+        try {
+            lock.writeLock().lockInterruptibly();
+            mapper.insertJob(job);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+            return new returnMSG<ResultDAG>(500,"error",null,0);
+        }finally {
+            lock.writeLock().unlock();
+        }
+        return new returnMSG<ResultDAG>(200,"success",null,0);
     }
 
     //获取任务依赖图的入口
@@ -228,17 +237,25 @@ public class nameServerController {
     }
 
     public returnMSG<List<jobBean>> getJobController(){
-        List<jobBean> allJob = mapper.getAllJob();
-        return new returnMSG<List<jobBean>>(200,"ok",allJob,allJob.size());
+        try {
+            lock.readLock().lockInterruptibly();
+            List<jobBean> allJob = mapper.getAllJob();
+            return new returnMSG<List<jobBean>>(200,"success",allJob,allJob.size());
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+            return new returnMSG<List<jobBean>>(500,"error",null,0);
+        }finally {
+            lock.readLock().unlock();
+        }
     }
 
-    public void killJob(Long jobId){
-        //todo 先判断是否需要kill 如果status为已经停用，就不再调用了
+    public returnMSG killJob(Long jobId){
+        //先判断是否需要kill 如果status为已经停用，就不再调用了
         try {
             lock.readLock().lockInterruptibly();
             jobBean jobById = mapper.getJobById(jobId);
             if(jobById.getStatus()==jobBean.stopped){
-                return;
+                return new returnMSG<List<jobBean>>(500,"任务已经停用",null,0);
             }
         } catch (InterruptedException e) {
             e.printStackTrace();
@@ -261,12 +278,17 @@ public class nameServerController {
             ResponseMessage msg = getFuture(requestId);
             if(msg==null){
                 //超时 认为任务失败
-                log.info("kill job fail");
+                log.info("kill job timeout");
+                return new returnMSG<List<jobBean>>(500,"Kill任务超时",null,0);
             }else {
                 int code = msg.getCode();
-                log.info("Response code:"+code);
+                if(code==ResponseMessage.error){
+                    log.info("kill job fail");
+                    return new returnMSG<List<jobBean>>(500,"Kill任务错误",null,0);
+                }
             }
         }
+        return new returnMSG<List<jobBean>>(200,"success",null,0);
     }
 
     //启动前 5秒 读取任务
@@ -297,6 +319,8 @@ public class nameServerController {
         return true;
     }
     //定时读取数据库将在5s内触发的jobBean放入时间轮中
+    //先上写锁，因为要读job表，防止其他线程和此线程竞争
+    //再上排他锁，防止另外的调度器和此调度器竞争，避免消息多发
     class toBeRunJobThread extends Thread{
         @Override
         public void run() {
@@ -306,105 +330,110 @@ public class nameServerController {
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-                Connection conn = null;
-                Boolean connAutoCommit = null;
-                PreparedStatement preparedStatement = null;
                 try {
-                    conn = dataSource.getConnection();
-                    connAutoCommit = conn.getAutoCommit();
-                    conn.setAutoCommit(false);
+                    lock.writeLock().lockInterruptibly();
+                    Connection conn = null;
+                    Boolean connAutoCommit = null;
+                    PreparedStatement preparedStatement = null;
+                    try {
+                        conn = dataSource.getConnection();
+                        connAutoCommit = conn.getAutoCommit();
+                        conn.setAutoCommit(false);
 
-                    preparedStatement = conn.prepareStatement(  "select * from jobLock where mylock = 'lock' for update" );
-                    preparedStatement.execute();
-                    long readTime=System.currentTimeMillis();
+                        preparedStatement = conn.prepareStatement(  "select * from jobLock where mylock = 'lock' for update" );
+                        preparedStatement.execute();
+                        long readTime=System.currentTimeMillis();
 
-                    List<jobBean> jobList = mapper.getToBeRunJob(readTime+fetchTime);
+                        List<jobBean> jobList = mapper.getToBeRunJob(readTime+fetchTime);
 
-                    log.info("jobList: "+jobList);
-                    if(jobList==null||jobList.size()==0)
-                        continue;
-                    //先进行粗略的判断 假设 readTime 95 则list中包含0-100的所有任务
-                    // 1. <=90 任务过期 根据错过重触发策略判断是否要触发
-                    // 2. 90-95 任务可能因为调度问题而错过上一次的调度
-                    // 3. >95 正常放入时间轮
-                    for (jobBean job : jobList) {
-                        //被动任务直接跳过 依赖任务先判断依赖任务是否全部完成
-                        if(jobBean.java_passive.equals(job.getJobType())||jobBean.shell_passive.equals(job.getJobType())) {
+                        if(jobList==null||jobList.size()==0)
                             continue;
-                        }else if(job.getPids()!=null&&!isDependFinishNormal(job.getPids())){
-                            continue;
-                        }
-                        if(job.getNextStartTime()<readTime-fetchTime){
-                        log.info("过期："+job);
-                        //1. <=90 任务过期
-                        if(job.isRestart()){
-                            sendJobToExecutor(job);
-                            job.setNextStartTime(getNextStartTime(job.getCronExpr()));
-                        }
-                        }else if(job.getNextStartTime()<readTime){
-                            //2. 90-95
-                            log.info("可发送："+job);
-                            sendJobToExecutor(job);
-                            job.setNextStartTime(getNextStartTime(job.getCronExpr()));
-                            if(job.getNextStartTime()<readTime+fetchTime){
-                                //放入时间轮中
+                        log.info("jobList: "+jobList);
+                        //先进行粗略的判断 假设 readTime 95 则list中包含0-100的所有任务
+                        // 1. <=90 任务过期 根据错过重触发策略判断是否要触发
+                        // 2. 90-95 任务可能因为调度问题而错过上一次的调度
+                        // 3. >95 正常放入时间轮
+                        for (jobBean job : jobList) {
+                            //被动任务直接跳过 依赖任务先判断依赖任务是否全部完成
+                            if(jobBean.java_passive.equals(job.getJobType())||jobBean.shell_passive.equals(job.getJobType())) {
+                                continue;
+                            }else if(job.getPids()!=null&&!isDependFinishNormal(job.getPids())){
+                                continue;
+                            }
+                            if(job.getNextStartTime()<readTime-fetchTime){
+                            log.info("过期："+job);
+                            //1. <=90 任务过期
+                            if(job.isRestart()){
+                                sendJobToExecutor(job);
+                                job.setNextStartTime(getNextStartTime(job.getCronExpr()));
+                            }
+                            }else if(job.getNextStartTime()<readTime){
+                                //2. 90-95
+                                log.info("可发送："+job);
+                                sendJobToExecutor(job);
+                                job.setNextStartTime(getNextStartTime(job.getCronExpr()));
+                                if(job.getNextStartTime()<readTime+fetchTime){
+                                    //放入时间轮中
+                                    int ring = (int)((job.getNextStartTime()/1000)%60);
+                                    putIntoTimeRing(ring,job.getJobId());
+                                    job.setNextStartTime(getNextTwoTime(job.getCronExpr()));
+                                    log.info("放入时间轮："+job);
+                                }
+                            }else{
+                                //3. >95 正常放入时间轮
                                 int ring = (int)((job.getNextStartTime()/1000)%60);
                                 putIntoTimeRing(ring,job.getJobId());
                                 job.setNextStartTime(getNextTwoTime(job.getCronExpr()));
                                 log.info("放入时间轮："+job);
                             }
-                        }else{
-                            //3. >95 正常放入时间轮
-                            int ring = (int)((job.getNextStartTime()/1000)%60);
-                            putIntoTimeRing(ring,job.getJobId());
-                            job.setNextStartTime(getNextTwoTime(job.getCronExpr()));
-                            log.info("放入时间轮："+job);
+                        }
+                        //修改job 主要是修改nextStartTime来避免竞争
+                        //修改jobTable 更改状态
+                        for (jobBean job : jobList) {
+                            job.setStatus(jobBean.doing);
+                            mapper.update(job);
+                        }
+                        log.info("更改完成");
+
+
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                    }finally {
+                        // 关闭排他锁
+                        if (conn != null) {
+                            try {
+                                conn.commit();
+                            } catch (SQLException e) {
+                                log.error(e.getMessage(), e);
+                            }
+                            try {
+                                conn.setAutoCommit(connAutoCommit);
+                            } catch (SQLException e) {
+                                log.error(e.getMessage(), e);
+                            }
+                            try {
+                                conn.close();
+                            } catch (SQLException e) {
+                                log.error(e.getMessage(), e);
+                            }
+                        }
+
+                        // close PreparedStatement
+                        if (null != preparedStatement) {
+                            try {
+                                preparedStatement.close();
+                            } catch (SQLException e) {
+                                log.error(e.getMessage(), e);
+                            }
                         }
                     }
-                    //修改job 主要是修改nextStartTime来避免竞争
-                    //修改jobTable 更改状态
-                    for (jobBean job : jobList) {
-                        job.setStatus(jobBean.doing);
-                        mapper.update(job);
-//                        mapper.updateJobInfoByStatusAndTimes(jobExecInfo.doing,jobExecInfo.Exec_Not_Use,job.getId());
-                    }
-                    log.info("更改完成");
-
-
-                } catch (SQLException e) {
+                } catch (InterruptedException e) {
                     e.printStackTrace();
                 }finally {
-                    // commit
-                    if (conn != null) {
-                        try {
-                            conn.commit();
-                        } catch (SQLException e) {
-                            log.error(e.getMessage(), e);
-                        }
-                        try {
-//                            conn.setAutoCommit(connAutoCommit);
-                            conn.setAutoCommit(true);
-                        } catch (SQLException e) {
-                            log.error(e.getMessage(), e);
-                        }
-                        try {
-                            conn.close();
-                        } catch (SQLException e) {
-                            log.error(e.getMessage(), e);
-                        }
-                    }
-
-                    // close PreparedStatement
-                    if (null != preparedStatement) {
-                        try {
-                            preparedStatement.close();
-                        } catch (SQLException e) {
-                            log.error(e.getMessage(), e);
-                        }
-                    }
+                    lock.writeLock().unlock();
                 }
-
             }
+
         }
     }
 
@@ -434,14 +463,20 @@ public class nameServerController {
                     }
                 }
 
-                if (ringItemData.size() > 0) {
-                    // do trigger
-                    log.info("job need to send");
-                    for (Long jobId : ringItemData) {
-                        sendJobToExecutor(mapper.getJobById(jobId));
+                try {
+                    lock.readLock().lockInterruptibly();
+                    if (ringItemData.size() > 0) {
+                        // 需要发送
+                        log.info("job need to send");
+                        for (Long jobId : ringItemData) {
+                            sendJobToExecutor(mapper.getJobById(jobId));
+                        }
+                        ringItemData.clear();
                     }
-                    // clear
-                    ringItemData.clear();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }finally {
+                    lock.readLock().unlock();
                 }
             }
         }

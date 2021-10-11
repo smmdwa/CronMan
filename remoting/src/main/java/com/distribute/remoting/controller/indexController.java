@@ -20,16 +20,6 @@ public class indexController {
 
     @Autowired
     nameServerController controller;
-
-    @RequestMapping("/index")
-    public String demo() {
-        return "layui/index";
-    }
-    @RequestMapping("/temp")
-    public String demo1() {
-        return "layui/temp";
-    }
-
     @ResponseBody
     @PostMapping("/add")
     public returnMSG get(@RequestBody Map map) {
@@ -54,7 +44,7 @@ public class indexController {
             returnMSG jobVO = new returnMSG(code,msg,null,0);
             return jobVO;
         }
-        controller.addJobController(
+        returnMSG returnMSG = controller.addJobController(
                 String.valueOf(map.get("name")),
                 pids,
                 String.valueOf(map.get("className")),
@@ -63,13 +53,12 @@ public class indexController {
                 String.valueOf(map.get("params")),
                 String.valueOf(map.get("cron")),
                 Integer.parseInt(String.valueOf(map.get("shard"))),
-                (Boolean)map.get("transfer"),
-                (Boolean)map.get("reStart"),
+                (Boolean) map.get("transfer"),
+                (Boolean) map.get("reStart"),
                 String.valueOf(map.get("policy")),
                 String.valueOf(map.get("jobType"))
-                );
-        returnMSG jobVO = new returnMSG(200,"success",null,0);
-        return jobVO;
+        );
+        return returnMSG;
     }
 
 }

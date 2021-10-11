@@ -13,6 +13,10 @@ public class ResponseMessage extends Message{
 
     private String msg;
 
+    public static final int success=200;
+
+    public static final int error=500;
+
     public ResponseMessage(Long requestId,int code, String msg) {
         this.code = code;
         this.msg = msg;
