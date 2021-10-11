@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.springframework.org/schema/jdbc">
+<head>
+    <meta charset="UTF-8">
+    <meta name="renderer" content="webkit|ie-comp|ie-stand">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta http-equiv="Cache-Control" content="no-siteapp"/>
+    <link rel="stylesheet" href="css/elemen-ui.css" th:href="@{/css/elemen-ui.css}"/>
+    <script type="text/javascript" src="js/axios.min.js" th:href="@{/js/axios.min.js}" charset="utf-8"></script>
+    <script type="text/javascript" src="js/vue.min.js" th:href="@{/js/vue.min.js}" charset="utf-8"></script>
+    <script type="text/javascript" src="js/element.js" th:href="@{/js/element.js}" charset="utf-8"></script>
+    <title>检修(非电类)工作票</title>
+</head>
+<body>
+<div class="table_wrap" id="app">
+    <!--startprint-->
+    <table class="temperatureChart" id="PrintArea">
+        <caption>
+            <p style="font-size: 20px;font-weight: bold">检修(非电类)工作票</p>
+        </caption>
+        <thead>
+        </thead>
+        <tbody>
+        <tr>
+            <td style="width: 20%;">工作单位</td>
+            <td style="width: 40%;">剥离运行部</td>
+            <td style="width: 20%;">编号</td>
+            <td style="width: 20%;">{{inspectlog_code}}</td>
+        </tr>
+        <tr>
+            <td>工作成员</td>
+            <td><select name="equip_code" v-model="work_member" lay-verify="required" lay-search="">
+                <option v-for="item in employee" v-bind:value="item.emp_code" value="">{{item.emp_name}}</option>
+            </select>
+            </td>
+            <td>作业负责人</td>
+            <td><select name="equip_code" v-model="work_timoneer" lay-verify="required" lay-search="">
+                <option v-for="item in employee" v-bind:value="item.emp_code" value="">{{item.emp_name}}</option>
+            </select></td>
+        </tr>
+        <tr>
+            <td>工作设备/地点</td>
+            <td><select name="equip_code" lay-verify="required" lay-search="">
+                <option v-for="item in equip" v-bind:value="item.equip_code" value="">{{item.equip_desc}}</option>
+            </select>/
+                <select name="modules" v-model="work_address" lay-verify="required" lay-search="">
+                    <option value="">剥离运行部</option>
+                    <option value="1">一号检修点</option>
+                    <option value="2">二号检修点</option>
+                </select>
+            </td>
+            <td>作业人数</td>
+            <td><select name="modules" v-model="work_empCount" lay-verify="required" lay-search="">
+                <option value="1">1人</option>
+                <option value="2">2人</option>
+                <option value="3">3人</option>
+                <option value="4">4人</option>
+                <option value="5">5人</option>
+                <option value="6">6人</option>
+            </select>
+            </td>
+        </tr>
+        <tr>
+            <td>工作内容</td>
+            <td colspan="3">
+                <input value="" style="display: inline-block;width:100%;text-align: left" v-model="inspect_desc"/></td>
+        </tr>
+        <tr>
+            <td>计划作业时间</td>
+            <td colspan="3">自<el-date-picker
+                    v-model="start_date"
+                    type="datetime"
+                    placeholder="选择日期时间"
+                    default-value
+                    format="yyyy年MM月dd日 HH:mm:ss"
+                    prefix-icon="el-icon-date"
+                    clear-icon="el-icon-circle-close"></el-date-picker>开始，至自<el-date-picker
+                    v-model="stop_date"
+                    type="datetime"
+                    format="yyyy年MM月dd日 HH:mm:ss"
+                    placeholder="选择日期时间"
+                    prefix-icon="el-icon-date"
+                    clear-icon="el-icon-circle-close"
+                    default-time="12:00:00">
+            </el-date-picker>完结
+            </td>
+        </tr>
+        <tr>
+            <td colspan="3" style="text-align: left;">1.必须采取的安全措施</td>
+            <td>选用划"〇"</td>
+        </tr>
+        <tr>
+            <td colspan="3">劳动保护穿戴齐全、上下现场提醒司机不超员不超速，检修作业时告知司机、挂好安全锁、不违章操作</td>
+            <td><select name="modules" v-model="safety_rule" lay-verify="required" lay-search="">
+                <option value="1">〇</option>
+                <option value="2">×</option>
+            </select>
+            </td>
+        </tr>
+        <tr>
+            <td>工作票签发人:</td>
+            <td><select name="equip_code" v-model="signature_code" lay-verify="required" lay-search="">
+                <option v-for="item in employee" v-bind:value="item.emp_code" value="">{{item.emp_name}}</option>
+            </select>
+            </td>
+            <td colspan="2">
+                <el-date-picker
+                        v-model="signature_date"
+                        type="datetime"
+                        placeholder="选择日期时间"
+                        default-value
+                        format="yyyy年MM月dd日 HH:mm:ss"
+                        prefix-icon="el-icon-date"
+                        clear-icon="el-icon-circle-close">
+                </el-date-picker>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+<script src="https://cdn.bootcdn.net/ajax/libs/qs/6.9.4/qs.min.js"></script>
+<script th:inline="javascript" type="application/javascript">
+    var vm = new Vue({
+        el: '#app',
+        data: {
+            list: [],
+            id: "",
+            inspectlog_code: "20200527",
+            inspect_desc: "",
+            start_date: "",
+            stop_date: "",
+            equip_code: "",
+            equip: [[${equip}]],            //使用thymeleaf标签使用后台实体，绑定到vue的model
+            employee: [[${employee}]],
+        },
+        methods: {
+            add() {
+                console.log("111")
+                let obj = new Object();
+                obj.id = this.id,
+                    obj.inspectlog_code = this.inspectlog_code,
+                    obj.inspect_dasc = this.inspect_dasc,
+                    obj.start_date = this.start_date,
+                    obj.stop_date = this.stop_date,
+                    obj.work_timoneer = this.work_timoneer,
+                    obj.work_address = this.work_address,
+                    obj.work_empCount = this.work_empCount,
+                    axios.defaults.headers.post['Content-Type'] = 'application/x-www-form-urlencoded;charset=UTF-8';
+                function postRequest(url, params) {
+                    return new Promise((resolve, reject) => {
+                        axios.post(url, window.Qs.stringify(params))
+                            .then(res => {
+                                if (res.data > 0) {
+                                    resolve(res.data);
+                                } else {
+                                    //Message.error(res.data.msg)
+                                }
+                            })
+                            .catch(err => {
+                                // reject(err.data)
+                                //Message.error('服务器出错了')
+                            })
+                    });
+                }
+                postRequest('ADD_Inspect',obj);
+            }
+        }
+    })
+</script>
+</body>
+
+</html>

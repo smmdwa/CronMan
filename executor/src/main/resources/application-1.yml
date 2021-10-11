@@ -1,0 +1,9 @@
+executor:
+  name: executor-1
+  ip: 127.0.0.1
+  port: 8091
+server:
+  port: 8091
+controller:
+  channel:
+    expiredTime: 30000

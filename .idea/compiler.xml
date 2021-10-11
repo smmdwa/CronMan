@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CompilerConfiguration">
+    <annotationProcessing>
+      <profile name="Maven default annotation processors profile" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <module name="scheduler" />
+        <module name="executor" />
+        <module name="remoting" />
+      </profile>
+    </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="cronjob" target="1.8" />
+      <module name="executor" target="1.8" />
+      <module name="remoting" target="1.8" />
+      <module name="scheduler" target="1.8" />
+    </bytecodeTargetLevel>
+  </component>
+  <component name="JavacSettings">
+    <option name="ADDITIONAL_OPTIONS_OVERRIDE">
+      <module name="cronjob" options="-parameters" />
+      <module name="executor" options="-parameters" />
+      <module name="remoting" options="-parameters" />
+      <module name="scheduler" options="-parameters" />
+    </option>
+  </component>
+</project>

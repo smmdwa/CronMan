@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>layout 后台大布局 - Layui</title>
+    <link th:href="@{/layui/css/layui.css}" rel="stylesheet" />
+    <script src="http://code.jquery.com/jquery-1.7.2.min.js"></script>
+    <!-- 引入样式 -->
+<!--    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">-->
+<!--    <script type="text/javascript" src="js/element.js" th:href="@{/js/element.js}" charset="utf-8"></script>-->
+</head>
+<body class="layui-layout-body">
+<div class="layui-layout layui-layout-admin">
+    <div class="layui-header">
+        <div class="layui-logo">分布式定时任务DisCron</div>
+        <!-- 头部区域（可配合layui已有的水平导航） -->
+        <ul class="layui-nav layui-layout-left">
+            <li class="layui-nav-item"><a href="">控制台</a></li>
+            <li class="layui-nav-item"><a href="">用户管理</a></li>
+
+        </ul>
+        <ul class="layui-nav layui-layout-right">
+            <li class="layui-nav-item"><a href="javascript:;">root </a>
+                <dl class="layui-nav-child">
+                    <dd>
+                        <a href="">基本资料</a>
+                    </dd>
+                    <dd>
+                        <a href="">安全设置</a>
+                    </dd>
+                </dl></li>
+            <li class="layui-nav-item"><a href="">退了</a></li>
+        </ul>
+    </div>
+
+    <div class="layui-side layui-bg-black">
+        <div class="layui-side-scroll">
+            <!-- 左侧导航区域（可配合layui已有的垂直导航） -->
+            <ul class="layui-nav layui-nav-tree" lay-filter="test">
+                <li class="layui-nav-item layui-nav-itemed">
+                    <a class="" href="javascript:;">任务配置</a>
+                    <dl class="layui-nav-child">
+                        <dd>
+                            <a href="javascript:;">列表一</a>
+                        </dd>
+                        <dd>
+                            <a href="javascript:;">列表二</a>
+                        </dd>
+                    </dl>
+                </li>
+
+
+                <li class="layui-nav-item">
+                    <a href="javascript:;">任务监控</a>
+                    <dl class="layui-nav-child">
+                        <dd>
+                            <a href="javascript:;">列表一</a>
+                        </dd>
+                        <dd>
+                            <a href="javascript:;">列表二</a>
+                        </dd>
+                        <dd>
+                            <a href="">超链接</a>
+                        </dd>
+                    </dl></li>
+
+            </ul>
+        </div>
+    </div>
+
+    <div class="layui-body">
+        <!-- 内容主体区域 -->
+        <div style="padding: 15px;">
+            内容主体区域ddd
+            <table id="demo" lay-filter="test"></table>
+<!--            <script  th:inline="javascript">-->
+<!--                layui.use('table', function(){-->
+<!--                    var table = layui.table;-->
+
+<!--                    //第一个实例-->
+<!--                    table.render({-->
+<!--                        elem: '#demo'-->
+<!--                        ,height: 312-->
+<!--                        ,url: 'http://localhost:8080/data' //数据接口-->
+<!--                        ,page: true //开启分页-->
+<!--                        ,cols: [-->
+<!--                            [-->
+<!--                            {field: 'name', title: 'ID', width:80, sort: true, fixed: 'left'},-->
+<!--                            {field: 'executorAddr', title: 'ID', width:80, sort: true, fixed: 'left'},-->
+<!--                            {field: 'count', title: 'ID', width:80, sort: true, fixed: 'left'},-->
+<!--                            {field: 'level', title: 'ID', width:80, sort: true, fixed: 'left'}-->
+
+
+<!--                            ]-->
+<!--                        ]-->
+<!--                    });-->
+
+<!--                });-->
+<!--            </script>-->
+
+            <div id="app">{{message}}</div>
+
+
+            <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js">
+        </script>
+            <script src="https://unpkg.com/axios/dist/axios.min.js">
+            </script>
+
+            <script>
+                var app=new Vue({
+                    el:"#app",
+                    data:{
+                        message:1
+                    }
+                })
+            </script>
+
+            <div id="try">
+                <input type="button" @click="getJoke" value="获取joke">
+                <h1 id="h1">{{message1}}</h1>
+            </div>
+            <script>
+                var app=new Vue({
+                    el:"#try",
+                    data:{
+                        message1:1
+                    },
+                    methods:{
+                        getJoke:function () {
+                            var that=this
+                            axios.get("http://localhost:8080/data").then(
+                                function (response) {
+                                    that.message1=response.data.msg
+                                    console.log(that.message1)
+
+                                },
+                                function (err) {
+                                    console.log(err)
+
+                                }
+                            )
+                        }
+                    }
+                })
+            </script>
+
+
+
+        </div>
+    </div>
+
+    <div class="layui-footer">
+        <!-- 底部固定区域 -->
+        © layui.com - 底部固定区域
+    </div>
+</div>
+<script th:src="@{/layui/layui.js}"></script>
+<script>
+    //JavaScript代码区域
+    layui.use('element', function() {
+        var element = layui.element;
+
+    });
+</script>
+</body>
+</html>
