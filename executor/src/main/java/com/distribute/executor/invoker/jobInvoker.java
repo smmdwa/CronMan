@@ -1,13 +1,11 @@
 package com.distribute.executor.invoker;
 
 import com.distribute.executor.annotation.scheduleJob;
-import com.distribute.executor.bean.jobHandler;
+import com.distribute.executor.bean.worker;
 import com.distribute.executor.bean.jobThread;
-import com.distribute.executor.bean.methodJobHandler;
-import com.distribute.executor.netty_client.NettyClient;
+import com.distribute.executor.bean.methodWorker;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 
 import java.lang.reflect.Method;
 import java.util.Map;
@@ -22,11 +20,11 @@ public class jobInvoker {
 
     public void destroy(){}
 
-    public static ConcurrentMap<String, jobHandler> jobHandlerRepository = new ConcurrentHashMap<String, jobHandler>();
-    public static jobHandler loadJobHandler(String name){
+    public static ConcurrentMap<String, worker> jobHandlerRepository = new ConcurrentHashMap<String, worker>();
+    public static worker loadJobHandler(String name){
         return jobHandlerRepository.get(name);
     }
-    public static jobHandler registJobHandler(String name, jobHandler jobHandler){
+    public static worker registJobHandler(String name, worker jobHandler){
         return jobHandlerRepository.put(name, jobHandler);
     }
     protected void registJobHandler(scheduleJob scheduleJob, Object bean, Method executeMethod){
@@ -72,7 +70,7 @@ public class jobInvoker {
 //        }
 
         // registry jobhandler
-        registJobHandler(name, new methodJobHandler(bean, executeMethod, initMethod, destroyMethod));
+        registJobHandler(name, new methodWorker(bean, executeMethod, initMethod, destroyMethod));
 
         log.info("jobHandlerRepository: "+jobHandlerRepository);
     }

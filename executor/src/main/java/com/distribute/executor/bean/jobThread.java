@@ -1,9 +1,7 @@
 package com.distribute.executor.bean;
 
 import com.distribute.executor.invoker.jobInvoker;
-import com.distribute.executor.invoker.jobSpringInvoker;
 import com.distribute.executor.netty_client.NettyClient;
-import com.distribute.executor.netty_client.execController;
 import com.distribute.executor.utils.Context;
 import com.distribute.remoting.Message.CallBackMessage;
 import com.distribute.remoting.Message.SendJobMessage;
@@ -13,8 +11,6 @@ import com.distribute.remoting.bean.jobBean;
 import com.distribute.remoting.utils.DataUtil;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,7 +24,7 @@ public class jobThread extends Thread {
 //    @Autowired
 //    jobSpringInvoker invoker;
 
-    private jobHandler handler;
+    private worker handler;
 
     private Long jobId;
 
@@ -99,10 +95,10 @@ public class jobThread extends Thread {
                 log.error(e.getMessage());
             }finally {
                 if(ok&&msg!=null){
-                    callBackThread.pushCallBack(new CallBackMessage(this.executorName, ResultEnum.success.result,msg.getShardIndex(),msg.getShardTotal(),jobId,msg.getExecId()));
+                    backer.pushCallBack(new CallBackMessage(this.executorName, ResultEnum.success.result,msg.getShardIndex(),msg.getShardTotal(),jobId,msg.getExecId()));
                 }else if(!ok&&msg!=null){
                     //todo 失败了 添加报警
-                    callBackThread.pushCallBack(new CallBackMessage(this.executorName,ResultEnum.error.result,msg.getShardIndex(),msg.getShardTotal(),jobId,msg.getExecId()));
+                    backer.pushCallBack(new CallBackMessage(this.executorName,ResultEnum.error.result,msg.getShardIndex(),msg.getShardTotal(),jobId,msg.getExecId()));
                 }
             }
         }
@@ -116,7 +112,7 @@ public class jobThread extends Thread {
         //设置线程上下文 用于分片等
         Integer index = msg.getShardIndex();
         Integer total = msg.getShardTotal();
-        threadContext.setXxlJobContext(new threadContext(job.getJobId(),index,total));
+        threadContext.setContext(new threadContext(job.getJobId(),index,total));
 
         //设置handler，用于进行任务execute
         String className = job.getClassName();
@@ -152,7 +148,7 @@ public class jobThread extends Thread {
                 return false;
             }
         }
-        methodJobHandler jobHandler = (methodJobHandler)jobInvoker.loadJobHandler(methodName);
+        methodWorker jobHandler = (methodWorker)jobInvoker.loadJobHandler(methodName);
         if(jobHandler !=null){
             jobHandler.setArgs(realArgs);
             this.handler=jobHandler;

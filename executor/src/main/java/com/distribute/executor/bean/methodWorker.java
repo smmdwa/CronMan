@@ -3,11 +3,10 @@ package com.distribute.executor.bean;
 import lombok.extern.slf4j.Slf4j;
 
 import java.lang.reflect.Method;
-import java.util.Arrays;
 import java.util.List;
 
 @Slf4j
-public class methodJobHandler extends jobHandler {
+public class methodWorker extends worker {
 
     private final Object target;
     private final Method method;
@@ -19,7 +18,7 @@ public class methodJobHandler extends jobHandler {
         this.args= args.toArray();
     }
 
-    public methodJobHandler(Object target, Method method, Method initMethod, Method destroyMethod) {
+    public methodWorker(Object target, Method method, Method initMethod, Method destroyMethod) {
         this.target = target;
         this.method = method;
 

@@ -1,30 +1,21 @@
 package com.distribute.executor.netty_client;
 
 
-import com.distribute.executor.bean.callBackThread;
-import com.distribute.executor.bean.jobHandler;
+import com.distribute.executor.bean.backer;
 import com.distribute.executor.bean.jobThread;
-import com.distribute.executor.bean.methodJobHandler;
 import com.distribute.executor.invoker.jobInvoker;
 import com.distribute.executor.invoker.jobSpringInvoker;
-import com.distribute.executor.utils.Context;
 import com.distribute.remoting.Message.KillJobMessage;
 import com.distribute.remoting.Message.Message;
 import com.distribute.remoting.Message.ResponseMessage;
 import com.distribute.remoting.Message.SendJobMessage;
 //import com.distribute.remoting.bean.Invocation;
-import com.distribute.remoting.bean.jobBean;
-import com.distribute.remoting.utils.idGenerator;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.support.BeanDefinitionBuilder;
-import org.springframework.beans.factory.support.DefaultListableBeanFactory;
-import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.*;
@@ -76,7 +67,7 @@ public class execController {
         //执行任务
         jobExecutor = new ThreadPoolExecutor(5, 10, 60, TimeUnit.SECONDS, new ArrayBlockingQueue<>(100));
 
-        callBackThread.getInstance();
+        backer.getInstance();
         log.info("initialize ===== ok");
     }
 

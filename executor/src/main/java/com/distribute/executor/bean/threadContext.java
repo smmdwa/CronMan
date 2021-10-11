@@ -28,7 +28,7 @@ public class threadContext {
     }
 
 
-    public static void setXxlJobContext(threadContext threadContext){
+    public static void setContext(threadContext threadContext){
         contextHolder.set(threadContext);
     }
 
