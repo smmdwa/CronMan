@@ -9,6 +9,7 @@ import com.distribute.remoting.Message.SendJobMessage;
 import com.distribute.remoting.bean.ResultEnum;
 import com.distribute.remoting.bean.jobBean;
 import com.distribute.remoting.utils.DataUtil;
+import com.distribute.remoting.utils.idUtil;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
@@ -95,7 +96,7 @@ public class jobThread extends Thread {
                 log.error(e.getMessage());
             }finally {
                 //todo 设置requestId
-                Long requestId=1L;
+                Long requestId=new idUtil().nextId();
                 if(ok&&msg!=null){
                     backer.pushCallBack(new CallBackMessage(this.executorName, ResultEnum.success.result,msg.getShardIndex(),msg.getShardTotal(),jobId,requestId,msg.getExecId()));
                 }else if(!ok&&msg!=null){
