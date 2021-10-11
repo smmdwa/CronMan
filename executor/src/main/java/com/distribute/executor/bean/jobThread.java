@@ -94,11 +94,13 @@ public class jobThread extends Thread {
                 log.info("execute over fail");
                 log.error(e.getMessage());
             }finally {
+                //todo 设置requestId
+                Long requestId=1L;
                 if(ok&&msg!=null){
-                    backer.pushCallBack(new CallBackMessage(this.executorName, ResultEnum.success.result,msg.getShardIndex(),msg.getShardTotal(),jobId,msg.getExecId()));
+                    backer.pushCallBack(new CallBackMessage(this.executorName, ResultEnum.success.result,msg.getShardIndex(),msg.getShardTotal(),jobId,requestId,msg.getExecId()));
                 }else if(!ok&&msg!=null){
                     //todo 失败了 添加报警
-                    backer.pushCallBack(new CallBackMessage(this.executorName,ResultEnum.error.result,msg.getShardIndex(),msg.getShardTotal(),jobId,msg.getExecId()));
+                    backer.pushCallBack(new CallBackMessage(this.executorName,ResultEnum.error.result,msg.getShardIndex(),msg.getShardTotal(),jobId,requestId,msg.getExecId()));
                 }
             }
         }

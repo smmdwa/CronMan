@@ -5,11 +5,17 @@ import com.distribute.executor.utils.Context;
 import com.distribute.executor.utils.DataUtil;
 import com.distribute.executor.utils.serialUtil;
 import com.distribute.remoting.Message.CallBackMessage;
+import com.distribute.remoting.Message.ResponseMessage;
+import com.distribute.remoting.bean.jobBean;
+import com.distribute.remoting.bean.returnMSG;
+import com.distribute.remoting.response.defaultFuture;
+import com.distribute.remoting.utils.FutureUtil;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -24,6 +30,7 @@ public class backer {
     private Thread watcher;
     private final String fileDir;
     private final String fileName;
+    private static final Long watcherSleepTime=30 *1000L;
 
     public backer(){
         callBackQueue=new LinkedBlockingQueue<>();
@@ -62,13 +69,8 @@ public class backer {
                         callbackParamList.add(msg);
                         // 发送msg
                         for(CallBackMessage message:callbackParamList){
-                            backer.this.client.sendMessage(message,0);
-                            log.info("send CallBackMessage success msg:"+message);
-
-                            //todo 添加失败进行持久化
-
+                            tryToCallBack(message);
                         }
-
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                         log.info("send CallBackMessage error");
@@ -83,7 +85,14 @@ public class backer {
         watcher=new Thread(new Runnable(){
             @Override
             public void run() {
-
+                while (true){
+                    try {
+                        Thread.sleep(backer.watcherSleepTime);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    watchFileToSend();
+                }
             }
         });
         watcher.setName("watcher");
@@ -142,28 +151,42 @@ public class backer {
             }
             CallBackMessage msg = (CallBackMessage) serialUtil.deserialize(bytes, CallBackMessage.class);
             file.delete();
-            retryToBack(msg);
+            tryToCallBack(msg);
         }
 
     }
 
-    private void retryToBack(CallBackMessage msg){
+    private void tryToCallBack(CallBackMessage msg){
         boolean result = false;
         // todo 添加遍历调度器
-        backer.this.client.sendMessage(msg,0);
-        log.info("send CallBackMessage success msg:"+msg);
+        defaultFuture future = new defaultFuture();
 
-        if(!result){
+        Map<Long, defaultFuture> futureMap = backer.this.client.getFutureMap();
+        futureMap.put(msg.getRequestId(),future);
+
+        //发送消息
+        backer.this.client.sendMessage(msg,0);
+
+        //等待响应
+        ResponseMessage responseMessage = FutureUtil.getFuture(futureMap,msg.getRequestId());
+        if(responseMessage==null||responseMessage.getCode()==ResponseMessage.error){
+            //超时或者任务失败 需要进行持久化
+            log.info("callBack job fail");
             setWatchFile(msg);
+        }else {
+            log.info("send CallBackMessage success msg:"+msg);
         }
+//        if(!result){
+//            setWatchFile(msg);
+//        }
     }
 
     public static void main(String[] args) {
-        backer instance = backer.getInstance();
-        System.out.println(instance.fileName);
-        System.out.println(instance.fileDir);
-        instance.setWatchFile(new CallBackMessage());
-        instance.watchFileToSend();
+//        backer instance = backer.getInstance();
+//        System.out.println(instance.fileName);
+//        System.out.println(instance.fileDir);
+//        instance.setWatchFile(new CallBackMessage());
+//        instance.watchFileToSend();
     }
 
 }

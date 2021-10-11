@@ -8,6 +8,7 @@ import com.distribute.remoting.Message.RegisterInMessage;
 import com.distribute.remoting.handler.MessageCodecSharable;
 import com.distribute.remoting.handler.ProcotolFrameDecoder;
 import com.distribute.remoting.handler.ResponseHandler;
+import com.distribute.remoting.response.defaultFuture;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -23,6 +24,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Component
 @Slf4j
@@ -42,6 +45,10 @@ public class NettyClient {
     private String name;
 
     private Channel channel;
+
+    private final Map<Long, defaultFuture> futureMap = new ConcurrentHashMap<>();
+
+
     @PostConstruct
     public void initialize(){
 

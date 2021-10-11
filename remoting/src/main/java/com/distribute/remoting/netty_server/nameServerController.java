@@ -86,24 +86,7 @@ public class nameServerController {
     private volatile Map<Integer,List<Long>> timeRing=new HashMap<>();
 
 
-    public ResponseMessage getFuture(Long requestId) {
-        try {
-            defaultFuture future = futureMap.get(requestId);
-            return future.getResponse(2000); //2秒就算超时
-        } finally {
-            //获取成功以后，从map中移除
-            futureMap.remove(requestId);
-        }
-    }
 
-    public boolean setFuture(ResponseMessage msg) {
-        defaultFuture future = futureMap.get(msg.getRequestId());
-        if(future==null){
-            return false;
-        }
-        future.setResponse(msg);
-        return true;
-    }
     @PostConstruct
     public void initialize() {
 
@@ -275,7 +258,7 @@ public class nameServerController {
             this.server.sendMessage(new KillJobMessage(jobId,requestId),0,info.getChannel());
 
             //等待响应
-            ResponseMessage msg = getFuture(requestId);
+            ResponseMessage msg = FutureUtil.getFuture(this.futureMap,requestId);
             if(msg==null){
                 //超时 认为任务失败
                 log.info("kill job timeout");

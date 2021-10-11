@@ -32,19 +32,6 @@ public class execController {
     private Map<Long, Future> doingFutures = new HashMap<>();
 
     private final jobManager manager=jobManager.getInstance();
-//
-//    private volatile static execController instance;
-//
-//    public static execController getInstance() {
-//        if (instance == null) {
-//            synchronized (execController.class) {
-//                if (instance == null) {
-//                    instance = new execController();
-//                }
-//            }
-//        }
-//        return instance;
-//    }
 
     private ThreadPoolExecutor jobExecutor;
 
@@ -53,6 +40,7 @@ public class execController {
 
     @Autowired
     NettyClient client;
+
 
 
     @PostConstruct
@@ -67,7 +55,7 @@ public class execController {
         //执行任务
         jobExecutor = new ThreadPoolExecutor(5, 10, 60, TimeUnit.SECONDS, new ArrayBlockingQueue<>(100));
 
-        backer.getInstance();
+        backer.getInstance().start();
         log.info("initialize ===== ok");
     }
 
