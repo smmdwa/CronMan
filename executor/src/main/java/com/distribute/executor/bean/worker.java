@@ -4,7 +4,7 @@ public abstract class worker {
 
 
     /**
-     * execute handler, invoked when executor receives a scheduling request
+     * execute  handler, invoked when executor receives a scheduling request
      *
      * @throws Exception
      */
