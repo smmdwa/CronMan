@@ -1,9 +1,0 @@
-executor:
-  name: executor-0
-  ip: 127.0.0.1
-  port: 8090
-controller:
-  channel:
-    expiredTime: 30000
-server:
-  port: 8090
