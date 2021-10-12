@@ -1,4 +1,15 @@
-/target/
-/.idea/
+target/
+.idea/
 /cronjob.iml
-/data/need-to-back
+/data/*
+*.class
+
+# Package Files #
+*.jar
+*.war
+*.ear
+*.iml
+*.log
+*.tar.gz
+*.zip
+*.MF
