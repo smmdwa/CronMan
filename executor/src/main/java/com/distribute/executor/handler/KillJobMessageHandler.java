@@ -18,7 +18,7 @@ public class KillJobMessageHandler  extends SimpleChannelInboundHandler<KillJobM
         execController controller = (execController) Context.getBean(execController.class);
         ResponseMessage response = controller.killOldJob(msg);
 
-        controller.sendResponse(response);
+        controller.sendResponse(msg.getSourceAddr(),response);
 
     }
 }

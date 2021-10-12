@@ -23,7 +23,7 @@ public class RegisterHandler extends SimpleChannelInboundHandler<RegisterInMessa
         boolean result = manager.registerExecutor(name, addr, channelHandlerContext.channel(),level);
 
         if(!result){
-            System.out.println("RegisterHandler === 出错了！！");
+            System.out.println("RegisterHandler === 出错");
         }
     }
 }

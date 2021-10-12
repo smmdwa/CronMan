@@ -9,9 +9,11 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class KillJobMessage extends Message{
-    public KillJobMessage(Long jobId,Long requestId) {
+    public KillJobMessage(Long jobId,Long requestId,String sourceAddr,String targetAddr) {
         this.jobId = jobId;
         this.setRequestId(requestId);
+        this.setSourceAddr(sourceAddr);
+        this.setTargetAddr(targetAddr);
     }
 
     @Override
@@ -20,6 +22,10 @@ public class KillJobMessage extends Message{
     }
 
     private Long jobId;
+
+    private String sourceAddr;
+
+    private String targetAddr;
 
 
 }

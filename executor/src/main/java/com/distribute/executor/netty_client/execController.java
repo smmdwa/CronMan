@@ -53,7 +53,7 @@ public class execController {
 //        invoker= new jobSpringInvoker();
 
         //执行任务
-        jobExecutor = new ThreadPoolExecutor(5, 10, 60, TimeUnit.SECONDS, new ArrayBlockingQueue<>(100));
+        jobExecutor = new ThreadPoolExecutor(3, 5, 60, TimeUnit.SECONDS, new ArrayBlockingQueue<>(100));
 
         backer.getInstance().start();
         log.info("initialize ===== ok");
@@ -98,8 +98,8 @@ public class execController {
         return new ResponseMessage(msg.getRequestId(),Message.error,"already killed or not exist");
     }
 
-    public void sendResponse(Message msg){
-        client.sendMessage(msg,0);
+    public void sendResponse(String addr,Message msg){
+        client.sendMessage(addr,msg,0);
     }
 
     //删除所有job

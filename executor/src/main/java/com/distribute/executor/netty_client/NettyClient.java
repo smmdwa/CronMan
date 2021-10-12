@@ -1,8 +1,10 @@
 package com.distribute.executor.netty_client;
 
 import com.distribute.executor.handler.ChatClientHandler;
+import com.distribute.executor.handler.ClientResponseHandler;
 import com.distribute.executor.handler.KillJobMessageHandler;
 import com.distribute.executor.handler.SendJobMessageHandler;
+import com.distribute.executor.utils.DataUtil;
 import com.distribute.remoting.Message.Message;
 import com.distribute.remoting.Message.RegisterInMessage;
 import com.distribute.remoting.handler.MessageCodecSharable;
@@ -24,13 +26,17 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 @Component
 @Slf4j
 @Data
-//@ConfigurationProperties(prefix = "executor")
 public class NettyClient {
 //    @Value("${executor.addr}")
     private String addr;
@@ -44,15 +50,23 @@ public class NettyClient {
     @Value("${executor.name}")
     private String name;
 
-    private Channel channel;
+    @Value("${remoting.address}")
+    private String remotingAddress;
+
+    private Map<String,Channel> channelMap=new HashMap<>();
+
+//    private Channel channel;
+
+    private List<String > addressList;
 
     private final Map<Long, defaultFuture> futureMap = new ConcurrentHashMap<>();
 
+    private ThreadPoolExecutor connectExecutor;
 
     @PostConstruct
     public void initialize(){
-
         this.addr=this.ip+":"+this.port;
+//        connectExecutor=new ThreadPoolExecutor(3,5,60, TimeUnit.SECONDS,new ArrayBlockingQueue<>(100));
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -63,7 +77,7 @@ public class NettyClient {
                 }
             }
         }).start();
-        log.info("initialize ===== ok");
+        log.info("initialize client ===== ok");
     }
     public void start() throws InterruptedException {
         //1.创建一个 NioEventLoopGroup 对象实例
@@ -80,38 +94,49 @@ public class NettyClient {
                         public void initChannel(SocketChannel ch) throws Exception {
                             ChannelPipeline p = ch.pipeline();
                             p.addLast(new ProcotolFrameDecoder());
-//                            p.addLast(new LoggingHandler(LogLevel.DEBUG));
+                            p.addLast(new LoggingHandler(LogLevel.DEBUG));
                             p.addLast(new MessageCodecSharable());
                             p.addLast(new IdleStateHandler(0, 3, 0));
                             p.addLast(new SendJobMessageHandler());
                             p.addLast(new KillJobMessageHandler());
-                            p.addLast(new ResponseHandler());
-                            p.addLast(new ChatClientHandler( name, addr));
+                            p.addLast(new ClientResponseHandler());
+                            p.addLast(new ChatClientHandler(name, addr));
                         }
                     });
-            // 6.尝试建立连接
-//            ChannelFuture f = b.connect(ip,port).sync();
-            ChannelFuture f = b.connect("localhost",8099).sync();
-
-            f.sync();
-            this.channel= f.channel();
-
-            // 发送注册请求
-            sendMessage(new RegisterInMessage(addr,name,5),0);
-
-            log.info("start ===== ok");
-
-            // 7.等待连接关闭（阻塞，直到Channel关闭）
-            f.channel().closeFuture().sync();
-        } finally {
-            group.shutdownGracefully();
+            addressList = DataUtil.transferString(remotingAddress);
+            for (String address : addressList) {
+                ChannelFuture f = b.connect(address.split(":")[0], Integer.parseInt(address.split(":")[1]));
+                f.addListener(new ChannelFutureListener() {
+                    @Override
+                    public void operationComplete(ChannelFuture channelFuture) throws Exception {
+                        if (channelFuture.isSuccess()) {
+                            System.out.println("connect success " + address + " " + Thread.currentThread());
+                        } else {
+                            //todo 二次重连
+                            System.out.println("connect error " + address + " " + Thread.currentThread());
+                        }
+                    }
+                });
+                f.sync();
+                channelMap.put(address, f.channel());
+                // 发送注册请求
+                sendMessage(address, new RegisterInMessage(addr, name, 5), 0);
+                log.info("连接remoting{}成功", address);
+                // 7.等待连接关闭（阻塞，直到Channel关闭）
+//                f.channel().closeFuture().sync();
+            }
+        }
+        finally {
+//            group.shutdownGracefully();
         }
     }
 
     //3次重试，还失败就记录日志
-    public void sendMessage(Message msg,Integer time){
+    public void sendMessage(String addr,Message msg,Integer time){
         if(time<3){
-            ChannelFuture channelFuture = this.channel.writeAndFlush(msg);
+            Channel channel=channelMap.get(addr);
+            if(channel==null)return;
+            ChannelFuture channelFuture = channel.writeAndFlush(msg);
             channelFuture.addListener(new ChannelFutureListener() {
                 @Override
                 public void operationComplete(ChannelFuture future) throws Exception {
@@ -122,7 +147,7 @@ public class NettyClient {
                         //记录错误
                         log.info("send msg error! time:"+time+" msg:"+msg);
                         future.cause().printStackTrace();
-                        sendMessage(msg,time+1);
+                        sendMessage(addr,msg,time+1);
                     }
                 }
             });

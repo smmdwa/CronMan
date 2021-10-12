@@ -7,6 +7,7 @@ import com.distribute.remoting.DAG.RelationDAG;
 import com.distribute.remoting.DAG.ResultDAG;
 import com.distribute.remoting.Message.CallBackMessage;
 import com.distribute.remoting.Message.KillJobMessage;
+import com.distribute.remoting.Message.Message;
 import com.distribute.remoting.Message.ResponseMessage;
 //import com.distribute.remoting.annotation.scheduleJob;
 import com.distribute.remoting.bean.*;
@@ -14,12 +15,14 @@ import com.distribute.remoting.mapper.JobMapper;
 import com.distribute.remoting.response.defaultFuture;
 import com.distribute.remoting.thread.sendJobThread;
 import com.distribute.remoting.utils.*;
+import io.netty.channel.Channel;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.ibatis.annotations.Mapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Component;
 //import org.springframework.scheduling.support.CronExpression;
 
@@ -41,6 +44,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 @Data
 @Slf4j
 @Component
+@DependsOn({"routeInfoManager", "context"})
 public class nameServerController {
 //    private volatile static nameServerController instance;
 
@@ -68,7 +72,8 @@ public class nameServerController {
     routeInfoManager routemanager;
 //    private final routeInfoManager routemanager=routeInfoManager.getInstance();
 
-    private final NettyServer server=NettyServer.getInstance();
+    @Autowired
+    NettyServer server;
 
 //    private final  ConcurrentHashMap<Long, jobExecInfo> jobTable=new ConcurrentHashMap<>(128);
 
@@ -86,11 +91,10 @@ public class nameServerController {
     private volatile Map<Integer,List<Long>> timeRing=new HashMap<>();
 
 
-
     @PostConstruct
     public void initialize() {
-
-        this.scheduledExecutorService.submit(new Runnable() {
+        this.lock=routemanager.getDataLock();
+        new Thread(new Runnable() {
             @Override
             public void run() {
                 //注意这里会一直卡住，同步等待结束 所以要用一个线程装
@@ -100,31 +104,23 @@ public class nameServerController {
                     e.printStackTrace();
                 }
             }
-        });
-
+        }).start();
+        log.info("scan:"+this.scheduledExecutorService+" ff"+this.routemanager);
+        log.info("datas:"+dataSource);
         //定时扫描活跃节点
         this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
             @Override
             public void run() {
                 nameServerController.this.routemanager.scanNotActiveExecutor();
             }
-        }, 5, 10 , TimeUnit.SECONDS);
-
-//        //定时扫描jobTable
-//        this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
-//            @Override
-//            public void run() {
-//                //                    scanJobTable();
-//                toBeRunJob();
-//            }
-//        }, 5, 5 , TimeUnit.SECONDS);
+        }, 5, 5 , TimeUnit.SECONDS);
 
 
         //专门用来发送sendJobMessage给 executor
-        sendExecutor=new ThreadPoolExecutor(5,10,60,TimeUnit.SECONDS,new ArrayBlockingQueue<>(100));
+        sendExecutor=new ThreadPoolExecutor(2,5,60,TimeUnit.SECONDS,new ArrayBlockingQueue<>(100));
 
         //专门用来处理callBackMessage
-        callBackExecutor=new ThreadPoolExecutor(10,10,120,TimeUnit.SECONDS,new ArrayBlockingQueue<>(100));
+        callBackExecutor=new ThreadPoolExecutor(2,5,120,TimeUnit.SECONDS,new ArrayBlockingQueue<>(100));
 
         //专门用来发送
         sendJobThread.getInstance();
@@ -138,10 +134,15 @@ public class nameServerController {
         toBeRingThread.setDaemon(true);
         toBeRingThread.setName("toBeRing");
         toBeRingThread.start();
+        log.info("initial nameserver");
+    }
 
-
-        this.lock=routemanager.getDataLock();
-
+    public void sendResponse(Message msg,String name){
+        Channel channel = this.routemanager.getExecutorChannel(name);
+        this.server.sendMessage(msg,0,channel);
+    }
+    public void sendResponse(Message msg, Channel channel){
+        this.server.sendMessage(msg,0,channel);
     }
 
     //添加任务的入口，构造jobBean
@@ -255,7 +256,7 @@ public class nameServerController {
             this.futureMap.put(requestId,future);
 
             //发送消息
-            this.server.sendMessage(new KillJobMessage(jobId,requestId),0,info.getChannel());
+            this.server.sendMessage(new KillJobMessage(jobId,requestId,this.server.getServerAddress(),info.getExecutorAddr()),0,info.getChannel());
 
             //等待响应
             ResponseMessage msg = FutureUtil.getFuture(this.futureMap,requestId);
@@ -579,15 +580,15 @@ public class nameServerController {
         return 0L;
     }
 
-    public void handleCallBackMessage(CallBackMessage msg) {
-        int result = handleCallBack(msg);
-    }
+//    public void handleCallBackMessage(CallBackMessage msg) {
+//        int result = handleCallBack(msg);
+//    }
 
     //接受CallBackMessage，维护任务table
     //    1.如果code为200，任务完成，则设置isfinish=true
     //    2.         300, 任务出错，则认定为任务失败
     //    3.         400, executor断线，失效转移，让新的executor完成任务，由controller来做
-    public int handleCallBack(CallBackMessage msg){
+    public ResponseMessage handleCallBack(CallBackMessage msg){
         String name = msg.getName();
         Long jobId = msg.getJobId();
         Integer index = msg.getShardIndex();
@@ -622,10 +623,11 @@ public class nameServerController {
             }
         } catch (InterruptedException e) {
             e.printStackTrace();
+            return new ResponseMessage(msg.getRequestId(),500,"error");
         }finally {
             lock.writeLock().unlock();
         }
-        return code;
+        return new ResponseMessage(msg.getRequestId(),200,"success");
     }
 
 //    //修改jobFinishDetail的状态
@@ -674,8 +676,7 @@ public class nameServerController {
                     continue;
                 }
                 if(jobBean.java_passive.equals(job.getJobType())||jobBean.shell_passive.equals(job.getJobType())){
-                    //为被动依赖任务 判断是否他的pid任务是否全部完成：
-                    log.info("依赖任务："+job.getJobId()+" pids:"+job.getPids());
+                    //为被动依赖任务 判断是否他的pid任务是否全部完成
                     List<Long>pids= DataUtil.transferLong(job.getPids());
                     boolean result=true;
                     for (Long pid : pids) {

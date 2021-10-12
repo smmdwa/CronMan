@@ -158,11 +158,22 @@ public class routeInfoManager {
         }finally {
             this.executorLock.readLock().unlock();
         }
-
         return null;
     }
 
-    //从table中 选择一个可用的executor 拿到channel 发送SendJobMessage
+    public Channel getExecutorChannel(String name) {
+        try {
+            this.executorLock.readLock().lockInterruptibly();
+            return this.executorLiveTable.get(name).getChannel();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+            return null;
+        }finally {
+            this.executorLock.readLock().unlock();
+        }
+    }
+
+        //从table中 选择一个可用的executor 拿到channel 发送SendJobMessage
     public void sendJobToExecutor(jobBean job){
         try {
             this.executorLock.readLock().lockInterruptibly();
@@ -262,8 +273,8 @@ public class routeInfoManager {
             conn = dataSource.getConnection();
             connAutoCommit = conn.getAutoCommit();
             conn.setAutoCommit(false);
-
             preparedStatement = conn.prepareStatement(  "select * from jobLock where lock_name = 'lock' for update" );
+
             preparedStatement.execute();
 
             List<jobFinishDetail> notExecJobs = mapper.getNotExecJobs(name);

@@ -11,6 +11,7 @@ public class executorLiveInfo {
     private long lastUpdateTimestamp;
 //    private DataVersion dataVersion;
     private Channel channel;
-    private String serverAddr;
+
+    private String executorAddr;
 
 }

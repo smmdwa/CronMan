@@ -1,9 +1,11 @@
 executor:
-  name: executor-0
+  name: executor-2
   ip: 127.0.0.1
-  port: 8090
+  port: 8093
 controller:
   channel:
     expiredTime: 30000
 server:
-  port: 8090
+  port: 8093
+remoting:
+  address: 127.0.0.1:8088;127.0.0.1:8089

@@ -22,6 +22,7 @@ public abstract class Message implements Serializable {
 
     private int messageType;
 
+
     public abstract int getMessageType();
 
 

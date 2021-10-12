@@ -11,27 +11,18 @@ import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 
 @Data
 @Slf4j
-//@Component
+@Component
 public class NettyServer {
 
-    private volatile static NettyServer instance;
-
-    public static NettyServer getInstance() {
-        if (instance == null) {
-            synchronized (NettyServer.class) {
-                if (instance == null) {
-                    instance = new NettyServer();
-                }
-            }
-        }
-        return instance;
-    }
+    @Value("${remoting.address}")
+    private String serverAddress;
 
     private Integer port= 8099;
 
@@ -57,20 +48,21 @@ public class NettyServer {
                         public void initChannel(SocketChannel ch) {
                             ChannelPipeline p = ch.pipeline();
                             p.addLast(new ProcotolFrameDecoder());
-//                            p.addLast(new LoggingHandler(LogLevel.DEBUG));
+                            p.addLast(new LoggingHandler(LogLevel.DEBUG));
                             p.addLast(new MessageCodecSharable());
                             p.addLast(new PingHandler());
                             p.addLast(new RegisterHandler());
                             p.addLast(new CallBackMessageHandler());
                             p.addLast(new ResponseHandler());
                             p.addLast(new ChatServerHandler());
-
                         }
                     });
+            log.info("serverAddr:"+this.serverAddress);
             // 6.绑定端口,调用 sync 方法阻塞知道绑定完成
-            ChannelFuture f = b.bind("localhost",8099).sync();
+            ChannelFuture f = b.bind(this.serverAddress.split(":")[0], Integer.parseInt(this.serverAddress.split(":")[1])).sync();
             // 7.阻塞等待直到服务器Channel关闭(closeFuture()方法获取Channel 的CloseFuture对象,然后调用sync()方法)
             f.channel().closeFuture().sync();
+            log.info("serverAddr:"+this.serverAddress+"closed!");
         } finally {
             //8.优雅关闭相关线程组资源
             bossGroup.shutdownGracefully();

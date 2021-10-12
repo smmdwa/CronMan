@@ -5,6 +5,7 @@ import com.distribute.remoting.Message.SendJobMessage;
 import com.distribute.remoting.bean.jobFinishDetail;
 import com.distribute.remoting.bean.jobSendDetail;
 import com.distribute.remoting.netty_server.NettyServer;
+import com.distribute.remoting.utils.Context;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
@@ -47,7 +48,7 @@ public class sendJobThread extends Thread{
                 this.jobToBeTransferQueue.drainTo(callbackParamList);
                 callbackParamList.add(msg);
 
-                NettyServer server=NettyServer.getInstance();
+                NettyServer server= (NettyServer)Context.getBean(NettyServer.class);
                 // 发送msg
                 for(jobSendDetail message:callbackParamList){
                     server.sendMessage(new SendJobMessage(message.getJob(), message.getIndex(),message.getTotal(),message.getExecId()),0,message.getChannel());

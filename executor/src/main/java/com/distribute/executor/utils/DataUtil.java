@@ -4,6 +4,9 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 public class DataUtil {
 
@@ -31,7 +34,12 @@ public class DataUtil {
             }
         }
     }
-
+    public static List<String> transferString(String temp){
+        List<String> list=new ArrayList<>();
+        String[] split = temp.split(";");
+        Collections.addAll(list, split);
+        return list;
+    }
     public static void setFileContent(File file, byte[] data) {
 
         // file

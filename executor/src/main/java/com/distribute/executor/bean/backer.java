@@ -150,6 +150,7 @@ public class backer {
                 continue;
             }
             CallBackMessage msg = (CallBackMessage) serialUtil.deserialize(bytes, CallBackMessage.class);
+            log.info("need to back:"+msg);
             file.delete();
             tryToCallBack(msg);
         }
@@ -158,27 +159,29 @@ public class backer {
 
     private void tryToCallBack(CallBackMessage msg){
         boolean result = false;
-        // todo 添加遍历调度器
         defaultFuture future = new defaultFuture();
 
         Map<Long, defaultFuture> futureMap = backer.this.client.getFutureMap();
         futureMap.put(msg.getRequestId(),future);
 
-        //发送消息
-        backer.this.client.sendMessage(msg,0);
+        for(String address:this.client.getAddressList()){
+            //发送消息
+            backer.this.client.sendMessage(address,msg,0);
 
-        //等待响应
-        ResponseMessage responseMessage = FutureUtil.getFuture(futureMap,msg.getRequestId());
-        if(responseMessage==null||responseMessage.getCode()==ResponseMessage.error){
-            //超时或者任务失败 需要进行持久化
-            log.info("callBack job fail");
-            setWatchFile(msg);
-        }else {
-            log.info("send CallBackMessage success msg:"+msg);
+            //等待响应
+            ResponseMessage responseMessage = FutureUtil.getFuture(futureMap,msg.getRequestId());
+            if(responseMessage==null||responseMessage.getCode()==ResponseMessage.error){
+                //超时或者任务失败 需要进行持久化
+                log.info("callBack job fail");
+            }else {
+                result=true;
+                log.info("send CallBackMessage success msg:"+msg);
+                break;
+            }
         }
-//        if(!result){
-//            setWatchFile(msg);
-//        }
+        if(!result){
+            setWatchFile(msg);
+        }
     }
 
     public static void main(String[] args) {
