@@ -18,7 +18,7 @@ public class randomStrategy extends strategy {
             set.add(new Random().nextInt(infos.size()));
             time++;
             //防止死循环，即infos的总可用个数小于要求的分片个数
-            if(time>=20){
+            if(time>=100){
                 return null;
             }
         }
