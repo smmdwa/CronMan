@@ -243,6 +243,7 @@ public class nameServerController {
             }
 
             List<executorLiveInfo> infos = this.routemanager.getAllExecutorInfo(jobId);
+            if(infos==null)return new returnMSG<List<jobBean>>(200,"success",null,0);
             //向所有jobId关联的executor 发送消息
             for (executorLiveInfo info : infos) {
                 //生成future记录，根据requestId 获取对应结果
@@ -251,7 +252,7 @@ public class nameServerController {
                 this.futureMap.put(requestId,future);
 
                 //发送消息
-//                this.server.sendMessage(new KillJobMessage(jobId,requestId,this.server.getServerAddress(),info.getExecutorAddr()),0,info.getChannel());
+                this.server.sendMessage(new KillJobMessage(jobId,requestId,this.server.getServerAddress(),info.getExecutorAddr()),0,info.getChannel());
 
                 //等待响应
                 ResponseMessage msg = FutureUtil.getFuture(this.futureMap,requestId);

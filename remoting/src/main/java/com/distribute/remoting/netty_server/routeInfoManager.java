@@ -368,6 +368,7 @@ public class routeInfoManager {
             }
         } catch (InterruptedException e) {
             e.printStackTrace();
+            return null;
         }finally {
             this.executorLock.readLock().unlock();
         }
