@@ -35,6 +35,16 @@ public class tempController {
         return vo;
     }
 
+
+    @RequestMapping("/kill/{jobId}")
+    @ResponseBody
+    public returnMSG killJob(@PathVariable("jobId") Long jobId) {
+        returnMSG vo = controller.killJob(jobId);
+        return vo;
+    }
+
+
+
     public List<jobBean> fenye(List<jobBean> list, int page, int size){
         int i=0,j=list.size();
         List<jobBean>newList=new ArrayList<>();
