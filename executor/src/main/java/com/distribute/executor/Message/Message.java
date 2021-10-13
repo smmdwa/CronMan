@@ -1,0 +1,100 @@
+package com.distribute.executor.Message;
+
+import lombok.Data;
+
+import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
+
+@Data
+public abstract class Message implements Serializable {
+
+    /**
+     * 根据消息类型字节，获得对应的消息 class
+     * @param messageType 消息类型字节
+     * @return 消息 class
+     */
+    public static Class<? extends Message> getMessageClass(int messageType) {
+        return messageClasses.get(messageType);
+    }
+
+    private Long requestId;
+
+    private int messageType;
+
+
+    public abstract int getMessageType();
+
+
+    public static final int LoginRequestMessage = 0;
+    public static final int LoginResponseMessage = 1;
+    public static final int ChatRequestMessage = 2;
+    public static final int ChatResponseMessage = 3;
+    public static final int GroupCreateRequestMessage = 4;
+    public static final int GroupCreateResponseMessage = 5;
+    public static final int GroupJoinRequestMessage = 6;
+    public static final int GroupJoinResponseMessage = 7;
+    public static final int GroupQuitRequestMessage = 8;
+    public static final int GroupQuitResponseMessage = 9;
+    public static final int GroupChatRequestMessage = 10;
+    public static final int GroupChatResponseMessage = 11;
+    public static final int GroupMembersRequestMessage = 12;
+    public static final int GroupMembersResponseMessage = 13;
+    public static final int PingMessage = 14;
+    public static final int PongMessage = 15;
+
+    public static final int RegisterInMessage= 20;
+    public static final int RegisterOutMessage= 21;
+    public static final int SendJobMessage=22;
+
+    public static final int CallBackMessage=23;
+
+    public static final int KillJobMessage=24;
+
+    public static final int ResponseMessage=25;
+
+    /**
+     * 请求类型 byte 值
+     */
+    public static final int RPC_MESSAGE_TYPE_REQUEST = 101;
+    /**
+     * 响应类型 byte 值
+     */
+    public static final int  RPC_MESSAGE_TYPE_RESPONSE = 102;
+
+    public static final int success=200;
+
+    public static final int error=500;
+
+    private static final Map<Integer, Class<? extends Message>> messageClasses = new HashMap<>();
+
+    static {
+        messageClasses.put(PingMessage,PingMessage.class);
+        messageClasses.put(PongMessage,PongMessage.class);
+        messageClasses.put(RegisterInMessage,RegisterInMessage.class);
+        messageClasses.put(SendJobMessage,SendJobMessage.class);
+        messageClasses.put(CallBackMessage,CallBackMessage.class);
+        messageClasses.put(KillJobMessage,KillJobMessage.class);
+        messageClasses.put(ResponseMessage,ResponseMessage.class);
+
+    }
+//    static {
+//        messageClasses.put(LoginRequestMessage, LoginRequestMessage.class);
+//        messageClasses.put(LoginResponseMessage, LoginResponseMessage.class);
+//        messageClasses.put(ChatRequestMessage, ChatRequestMessage.class);
+//        messageClasses.put(ChatResponseMessage, ChatResponseMessage.class);
+//        messageClasses.put(GroupCreateRequestMessage, GroupCreateRequestMessage.class);
+//        messageClasses.put(GroupCreateResponseMessage, GroupCreateResponseMessage.class);
+//        messageClasses.put(GroupJoinRequestMessage, GroupJoinRequestMessage.class);
+//        messageClasses.put(GroupJoinResponseMessage, GroupJoinResponseMessage.class);
+//        messageClasses.put(GroupQuitRequestMessage, GroupQuitRequestMessage.class);
+//        messageClasses.put(GroupQuitResponseMessage, GroupQuitResponseMessage.class);
+//        messageClasses.put(GroupChatRequestMessage, GroupChatRequestMessage.class);
+//        messageClasses.put(GroupChatResponseMessage, GroupChatResponseMessage.class);
+//        messageClasses.put(GroupMembersRequestMessage, GroupMembersRequestMessage.class);
+//        messageClasses.put(GroupMembersResponseMessage, GroupMembersResponseMessage.class);
+//        messageClasses.put(RPC_MESSAGE_TYPE_REQUEST, RpcRequestMessage.class);
+//        messageClasses.put(RPC_MESSAGE_TYPE_RESPONSE, RpcResponseMessage.class);
+//    }
+
+}

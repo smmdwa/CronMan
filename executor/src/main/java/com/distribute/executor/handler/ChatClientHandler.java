@@ -4,7 +4,7 @@ package com.distribute.executor.handler;
 
 import com.distribute.executor.netty_client.execController;
 import com.distribute.executor.utils.Context;
-import com.distribute.remoting.Message.PingMessage;
+import com.distribute.executor.Message.PingMessage;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.timeout.IdleState;

@@ -1,7 +1,7 @@
 package com.distribute.executor.utils;
 
-import com.distribute.remoting.Message.ResponseMessage;
-import com.distribute.remoting.response.defaultFuture;
+import com.distribute.executor.Message.ResponseMessage;
+import com.distribute.executor.response.defaultFuture;
 
 import java.util.Map;
 

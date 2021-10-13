@@ -2,7 +2,7 @@ package com.distribute.executor.handler;
 
 
 import com.distribute.executor.netty_client.execController;
-import com.distribute.remoting.Message.SendJobMessage;
+import com.distribute.executor.Message.SendJobMessage;
 import com.distribute.executor.utils.Context;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;

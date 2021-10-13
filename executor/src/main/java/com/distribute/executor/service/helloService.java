@@ -2,7 +2,7 @@ package com.distribute.executor.service;
 
 import com.distribute.executor.annotation.scheduleJob;
 import com.distribute.executor.bean.threadContext;
-import com.distribute.remoting.bean.job;
+//import com.distribute.remoting.bean.job;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 

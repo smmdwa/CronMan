@@ -113,7 +113,7 @@ public class nameServerController {
             public void run() {
                 nameServerController.this.routemanager.scanNotActiveExecutor();
             }
-        }, 5, 5 , TimeUnit.SECONDS);
+        }, 5, 10 , TimeUnit.SECONDS);
 
 
         //专门用来发送sendJobMessage给 executor

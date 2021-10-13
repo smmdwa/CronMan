@@ -142,6 +142,6 @@ public class idUtil {
         return id;
     }
 
-    public static final com.distribute.remoting.utils.idUtil id = new com.distribute.remoting.utils.idUtil();
+    public static final idUtil id = new idUtil();
     //public static final  IdWorker idWorker = new IdWorker(31,31);
 }
