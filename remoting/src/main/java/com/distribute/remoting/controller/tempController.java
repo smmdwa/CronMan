@@ -43,7 +43,19 @@ public class tempController {
         return vo;
     }
 
+    @RequestMapping("/delete/{jobId}")
+    @ResponseBody
+    public returnMSG DeleteJob(@PathVariable("jobId") Long jobId) {
+        returnMSG vo = controller.DeleteJob(jobId);
+        return vo;
+    }
 
+    @RequestMapping("/start/{jobId}")
+    @ResponseBody
+    public returnMSG StartJob(@PathVariable("jobId") Long jobId) {
+        returnMSG vo = controller.StartJob(jobId);
+        return vo;
+    }
 
     public List<jobBean> fenye(List<jobBean> list, int page, int size){
         int i=0,j=list.size();

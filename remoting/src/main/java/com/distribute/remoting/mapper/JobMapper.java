@@ -32,6 +32,8 @@ public interface JobMapper {
 
     List<jobBean> getToBeRunJob(@Param("nextStartTime") long nextStartTime);
 
+    int updateJobDisable(long jobId);
+
     //========================= jobExecInfo
 
     List<jobBean> getAllJobInfo();

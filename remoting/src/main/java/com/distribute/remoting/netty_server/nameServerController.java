@@ -150,10 +150,10 @@ public class nameServerController {
         jobBean job;
         //是否是主动任务
         if(jobBean.java_normal.equals(jobType)||jobBean.shell_normal.equals(jobType)){
-            job = new jobBean(new idUtil().nextId(),pids,className,methodName,paramType,params,name,cronExpr,shardNum,transfer,reStart,policy,new Date(),new Date(),getNextStartTime(cronExpr),jobBean.init,0,jobType);
+            job = new jobBean(new idUtil().nextId(),pids,className,methodName,paramType,params,name,cronExpr,shardNum,transfer,reStart,policy,new Date(),new Date(),getNextStartTime(cronExpr),jobBean.init,0,jobType,jobBean.enabled);
         }
         else{
-            job = new jobBean(new idUtil().nextId(),pids,className,methodName,paramType,params,name,cronExpr,shardNum,transfer,reStart,policy,new Date(),new Date(),0L,jobBean.waiting,0,jobType);
+            job = new jobBean(new idUtil().nextId(),pids,className,methodName,paramType,params,name,cronExpr,shardNum,transfer,reStart,policy,new Date(),new Date(),0L,jobBean.waiting,0,jobType,jobBean.enabled);
         }
         try {
             lock.writeLock().lockInterruptibly();
@@ -236,44 +236,88 @@ public class nameServerController {
     public returnMSG killJob(Long jobId){
         //先判断是否需要kill 如果status为已经停用，就不再调用了
         try {
-            lock.readLock().lockInterruptibly();
+            lock.writeLock().lockInterruptibly();
             jobBean jobById = mapper.getJobById(jobId);
             if(jobById.getStatus()==jobBean.stopped){
                 return new returnMSG<List<jobBean>>(500,"任务已经停用",null,0);
             }
+
+            List<executorLiveInfo> infos = this.routemanager.getAllExecutorInfo(jobId);
+            //向所有jobId关联的executor 发送消息
+            for (executorLiveInfo info : infos) {
+                //生成future记录，根据requestId 获取对应结果
+                defaultFuture future = new defaultFuture();
+                Long requestId=idGenerator.nextLongId();
+                this.futureMap.put(requestId,future);
+
+                //发送消息
+//                this.server.sendMessage(new KillJobMessage(jobId,requestId,this.server.getServerAddress(),info.getExecutorAddr()),0,info.getChannel());
+
+                //等待响应
+                ResponseMessage msg = FutureUtil.getFuture(this.futureMap,requestId);
+                if(msg==null){
+                    //超时 认为任务失败
+                    log.info("kill job timeout");
+                    return new returnMSG<List<jobBean>>(500,"Kill任务超时",null,0);
+                }else {
+                    int code = msg.getCode();
+                    if(code==ResponseMessage.error){
+                        log.info("kill job fail");
+                        return new returnMSG<List<jobBean>>(500,"Kill任务错误",null,0);
+                    }
+                }
+            }
+
+            //修改状态为stopped
+            mapper.updateJobStatusById(jobId,jobBean.stopped);
+
         } catch (InterruptedException e) {
             e.printStackTrace();
         }finally {
-            lock.readLock().unlock();
+            lock.writeLock().unlock();
         }
-
-        List<executorLiveInfo> infos = this.routemanager.getAllExecutorInfo(jobId);
-        //向所有jobId关联的executor 发送消息
-        for (executorLiveInfo info : infos) {
-            //生成future记录，根据requestId 获取对应结果
-            defaultFuture future = new defaultFuture();
-            Long requestId=idGenerator.nextLongId();
-            this.futureMap.put(requestId,future);
-
-            //发送消息
-            this.server.sendMessage(new KillJobMessage(jobId,requestId,this.server.getServerAddress(),info.getExecutorAddr()),0,info.getChannel());
-
-            //等待响应
-            ResponseMessage msg = FutureUtil.getFuture(this.futureMap,requestId);
-            if(msg==null){
-                //超时 认为任务失败
-                log.info("kill job timeout");
-                return new returnMSG<List<jobBean>>(500,"Kill任务超时",null,0);
-            }else {
-                int code = msg.getCode();
-                if(code==ResponseMessage.error){
-                    log.info("kill job fail");
-                    return new returnMSG<List<jobBean>>(500,"Kill任务错误",null,0);
-                }
-            }
-        }
-        return new returnMSG<List<jobBean>>(200,"success",null,0);
+        return new returnMSG(200,"success",null,0);
     }
+
+    public returnMSG DeleteJob(Long jobId){
+
+        //先killJob 再设置enable=1
+        killJob(jobId);
+
+        try {
+            lock.writeLock().lockInterruptibly();
+            mapper.updateJobDisable(jobId);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+            return new returnMSG(500,"error",null,0);
+        }finally {
+            lock.writeLock().unlock();
+        }
+        return new returnMSG(200,"success",null,0);
+    }
+
+    public returnMSG StartJob(Long jobId){
+        //先判断是否需要start 如果status不为已停止，就不再调用了
+        try {
+            lock.writeLock().lockInterruptibly();
+            jobBean jobById = mapper.getJobById(jobId);
+            if(jobById.getStatus()!=jobBean.stopped){
+                return new returnMSG(500,"任务已经启用",null,0);
+            }
+            //修改mapper状态
+            if(jobBean.java_passive.equals(jobById.getJobType())||jobBean.shell_passive.equals(jobById.getJobType()))
+                mapper.updateJobStatusById(jobId,jobBean.waiting);
+            else
+                mapper.updateJobStatusById(jobId,jobBean.init);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+            return new returnMSG(500,"error",null,0);
+        }finally {
+            lock.writeLock().unlock();
+        }
+        return new returnMSG(200,"success",null,0);
+    }
+
 
     //启动前 5秒 读取任务
     private final long fetchTime=5 * 1000;

@@ -66,4 +66,9 @@ public class jobBean implements Serializable {
     public static final String shell_normal="shell_normal";
     //任务类型 暂时有四种 java被动 shell被动 java普通任务 shell普通任务
     private String jobType;
+
+    public static final int enabled=1;
+    public static final int disable=0;
+    //任务是否可用 对应的是删除任务
+    private Integer enable;
 }

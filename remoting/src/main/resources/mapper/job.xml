@@ -21,6 +21,8 @@
         <result column="status" property="status" />
         <result column="exec_times" property="execTimes" />
         <result column="job_type" property="jobType" />
+        <result column="enable" property="enable" />
+
     </resultMap>
 
     <resultMap id="jobTable" type="com.distribute.remoting.bean.jobExecInfo">
@@ -48,7 +50,8 @@
         `next_start_time`,
         `status`,
         `exec_times`,
-        `job_type`
+        `job_type`,
+        `enable`
 	</sql>
     <sql id="Base_JobInfo_List">
 	    `job_id`,
@@ -66,11 +69,11 @@
     </sql>
 
     <select id="getJobById" parameterType="long" resultType="com.distribute.remoting.bean.jobBean">
-        select <include refid="Base_Column_List" /> from `job` where job_id = #{jobId}
+        select <include refid="Base_Column_List" /> from `job` where job_id = #{jobId} and enable= 1
     </select>
 
     <select id="getAllJob"  resultType="com.distribute.remoting.bean.jobBean">
-        select <include refid="Base_Column_List" /> from `job`
+        select <include refid="Base_Column_List" /> from `job` where enable= 1
     </select>
 
     <update id="update" parameterType="com.distribute.remoting.bean.jobBean" >
@@ -93,7 +96,7 @@
 			status=#{status},
 			exec_times=#{execTimes},
 			job_type=#{jobType}
-		WHERE job_id = #{jobId}
+		WHERE job_id = #{jobId} and enable= 1
 	</update>
 
 
@@ -101,6 +104,12 @@
 		UPDATE job
 		SET
 			status=#{status}
+		WHERE job_id = #{jobId} and enable= 1
+	</update>
+    <update id="updateJobDisable"  >
+		UPDATE job
+		SET
+			enable= 0
 		WHERE job_id = #{jobId}
 	</update>
 
@@ -110,14 +119,14 @@
 			status=#{status},
 			update_time=#{updateTime},
 			exec_times=exec_times+1
-		WHERE job_id = #{jobId}
+		WHERE job_id = #{jobId} and enable= 1
 	</update>
 
     <update id="updateJobStatusAndTimeById"  >
 		UPDATE job
 		SET
 			status=#{status},exec_times=exec_times+1
-		WHERE job_id = #{jobId}
+		WHERE job_id = #{jobId} and enable= 1
 	</update>
 
     <insert id="insertJob" >
@@ -150,7 +159,7 @@
     <select id="getToBeRunJob" parameterType="java.util.HashMap" resultMap="job">
         SELECT <include refid="Base_Column_List" />
         FROM job AS t
-        WHERE  t.next_start_time <![CDATA[ <= ]]> #{nextStartTime}
+        WHERE  t.next_start_time <![CDATA[ <= ]]> #{nextStartTime} and enable= 1 and status != 2
         ORDER BY id ASC
 
     </select>
@@ -204,7 +213,7 @@
         select executor_name
         from `jobDetail` left join `job`
         on jobDetail.exec_id = job.exec_times and jobDetail.job_id =job.job_id
-        where jobDetail.job_id = #{jobId}
+        where jobDetail.job_id = #{jobId} and code = 0
     </select>
 
     <select id="getJobDetail" resultType="com.distribute.remoting.bean.jobFinishDetail">
