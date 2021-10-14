@@ -1,7 +1,7 @@
 target/
 .idea/
 /cronjob.iml
-/data/*
+data/*
 *.class
 
 # Package Files #

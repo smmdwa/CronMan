@@ -71,4 +71,6 @@ public class jobBean implements Serializable {
     public static final int disable=0;
     //任务是否可用 对应的是删除任务
     private Integer enable;
+
+    private String shell;
 }

@@ -10,7 +10,7 @@ import com.distribute.executor.response.defaultFuture;
 import com.distribute.executor.utils.FutureUtil;
 import lombok.extern.slf4j.Slf4j;
 
-import java.io.File;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -182,12 +182,52 @@ public class backer {
         }
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
 //        backer instance = backer.getInstance();
 //        System.out.println(instance.fileName);
 //        System.out.println(instance.fileDir);
 //        instance.setWatchFile(new CallBackMessage());
 //        instance.watchFileToSend();
+//        Process process = Runtime.getRuntime().exec("sh echo 111\necho hello");
+//        printResults(process);
+        System.out.println (System.getProperty ("os.name"));
+        System.out.println(System.getProperty("os.name").contains("Windows"));
+        markScriptFile("data/shell/11.sh","#!/bin/bash\\necho 111\\necho hello");
+    }
+    //替换换行符
+    public static String replace(String shellValue){
+        System.out.println(shellValue);
+        if(System.getProperty ("os.name").contains("Windows")){
+            return shellValue.replaceAll("\\n","\r\n");
+        }else if(System.getProperty ("os.name").contains("Linux")){
+            return shellValue.replaceAll("\\n","\r");
+        }else if(System.getProperty ("os.name").contains("Mac")){
+            return shellValue.replaceAll("\\n","\n");
+        }
+        return shellValue;
+    }
+    public static void printResults(Process process) throws IOException {
+        BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+        String line = "";
+        while ((line = reader.readLine()) != null) {
+            System.out.println(line);
+        }
+    }
+    public static void markScriptFile(String scriptFileName, String content) throws IOException {
+        // make file,   filePath/gluesource/666-123456789.py
+        FileOutputStream fileOutputStream = null;
+        try {
+            fileOutputStream = new FileOutputStream(scriptFileName);
+            content=replace(content);
+            fileOutputStream.write(content.getBytes("UTF-8"));
+            fileOutputStream.close();
+        } catch (Exception e) {
+            throw e;
+        }finally{
+            if(fileOutputStream != null){
+                fileOutputStream.close();
+            }
+        }
     }
 
 }

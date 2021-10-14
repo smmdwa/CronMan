@@ -273,7 +273,7 @@ public class routeInfoManager {
             conn = dataSource.getConnection();
             connAutoCommit = conn.getAutoCommit();
             conn.setAutoCommit(false);
-            preparedStatement = conn.prepareStatement(  "select * from jobLock where lock_name = 'lock' for update" );
+            preparedStatement = conn.prepareStatement(  "select * from jobLock where mylock = 'lock' for update" );
 
             preparedStatement.execute();
 

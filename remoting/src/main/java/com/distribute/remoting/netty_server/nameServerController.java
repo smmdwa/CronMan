@@ -146,27 +146,46 @@ public class nameServerController {
     }
 
     //添加任务的入口，构造jobBean
-    public returnMSG addJobController(String name,String pids,String className,String methodName,String paramType,String params,String cronExpr,Integer shardNum,boolean transfer,boolean reStart,String policy,String jobType){
+    public returnMSG addJobController(String name,String pids,String className,String methodName,String paramType,String params,String cronExpr,Integer shardNum,boolean transfer,boolean reStart,String policy,String jobType,String shell){
         jobBean job;
         //是否是主动任务
-        if(jobBean.java_normal.equals(jobType)||jobBean.shell_normal.equals(jobType)){
-            job = new jobBean(new idUtil().nextId(),pids,className,methodName,paramType,params,name,cronExpr,shardNum,transfer,reStart,policy,new Date(),new Date(),getNextStartTime(cronExpr),jobBean.init,0,jobType,jobBean.enabled);
+        if(jobBean.java_normal.equals(jobType)){
+            job = new jobBean(new idUtil().nextId(),pids,className,methodName,paramType,params,name,cronExpr,shardNum,transfer,reStart,policy,new Date(),new Date(),getNextStartTime(cronExpr),jobBean.init,0,jobType,jobBean.enabled,null);
+        }else if(jobBean.shell_normal.equals(jobType)){
+            job = new jobBean(new idUtil().nextId(),pids,className,methodName,paramType,params,name,cronExpr,shardNum,transfer,reStart,policy,new Date(),new Date(),getNextStartTime(cronExpr),jobBean.init,0,jobType,jobBean.enabled,shell);
+        }else if(jobBean.java_passive.equals(jobType)){
+            job = new jobBean(new idUtil().nextId(),pids,className,methodName,paramType,params,name,cronExpr,shardNum,transfer,reStart,policy,new Date(),new Date(),0L,jobBean.waiting,0,jobType,jobBean.enabled,null);
         }
         else{
-            job = new jobBean(new idUtil().nextId(),pids,className,methodName,paramType,params,name,cronExpr,shardNum,transfer,reStart,policy,new Date(),new Date(),0L,jobBean.waiting,0,jobType,jobBean.enabled);
+            job = new jobBean(new idUtil().nextId(),pids,className,methodName,paramType,params,name,cronExpr,shardNum,transfer,reStart,policy,new Date(),new Date(),0L,jobBean.waiting,0,jobType,jobBean.enabled,shell);
         }
+        log.info("new job:"+job);
         try {
             lock.writeLock().lockInterruptibly();
             mapper.insertJob(job);
-        } catch (InterruptedException e) {
+
+        } catch (Exception e) {
             e.printStackTrace();
             return new returnMSG<ResultDAG>(500,"error",null,0);
         }finally {
             lock.writeLock().unlock();
         }
+        System.out.println("ff"+replace(shell));
         return new returnMSG<ResultDAG>(200,"success",null,0);
     }
 
+    //替换换行符
+    public static String replace(String shellValue){
+        System.out.println(shellValue);
+        if(System.getProperty ("os.name").contains("Windows")){
+            return shellValue.replaceAll("\n","\r\n");
+        }else if(System.getProperty ("os.name").contains("Linux")){
+            return shellValue.replaceAll("\n","\r");
+        }else if(System.getProperty ("os.name").contains("Mac")){
+            return shellValue.replaceAll("\n","\n");
+        }
+        return shellValue;
+    }
     //获取任务依赖图的入口
     public returnMSG getDagController(Long jobId){
         try {
@@ -216,6 +235,8 @@ public class nameServerController {
 
         } catch (InterruptedException e) {
             e.printStackTrace();
+        }finally {
+            lock.readLock().unlock();
         }
         return true;
     }

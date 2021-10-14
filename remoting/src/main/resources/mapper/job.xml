@@ -22,6 +22,7 @@
         <result column="exec_times" property="execTimes" />
         <result column="job_type" property="jobType" />
         <result column="enable" property="enable" />
+        <result column="shell" property="shell" />
 
     </resultMap>
 
@@ -51,7 +52,8 @@
         `status`,
         `exec_times`,
         `job_type`,
-        `enable`
+        `enable`,
+        `shell`
 	</sql>
     <sql id="Base_JobInfo_List">
 	    `job_id`,
@@ -95,7 +97,8 @@
 			next_start_time = #{nextStartTime},
 			status=#{status},
 			exec_times=#{execTimes},
-			job_type=#{jobType}
+			job_type=#{jobType},
+			shell=#{shell}
 		WHERE job_id = #{jobId} and enable= 1
 	</update>
 
@@ -148,11 +151,13 @@
         `next_start_time`,
         `status`,
         `exec_times`,
-        `job_type`
+        `job_type`,
+        `shell`
         ) values (
         #{jobId},#{name},#{pids},#{className},#{methodName},
         #{parameterTypes},#{args},#{cronExpr},#{shardNum},#{transfer},
-        #{restart},#{policy},#{createTime},#{updateTime},#{nextStartTime},#{status},#{execTimes},#{jobType}
+        #{restart},#{policy},#{createTime},#{updateTime},#{nextStartTime},#{status},#{execTimes},#{jobType},
+        #{shell}
         )
     </insert>
 

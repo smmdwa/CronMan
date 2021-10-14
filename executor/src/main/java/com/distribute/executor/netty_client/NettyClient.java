@@ -41,16 +41,16 @@ public class NettyClient {
 //    @Value("${executor.addr}")
     private String addr;
 
-    @Value("${executor.ip}")
+    @Value("${executor.ip:127.0.0.1}")
     private String ip;
 
-    @Value("${executor.port}")
+    @Value("${executor.port:8092}")
     private Integer port;
 
-    @Value("${executor.name}")
+    @Value("${executor.name:executor_admin}")
     private String name;
 
-    @Value("${remoting.address}")
+    @Value("${remoting.address:127.0.0.1:8088}")
     private String remotingAddress;
 
     private Map<String,Channel> channelMap=new HashMap<>();

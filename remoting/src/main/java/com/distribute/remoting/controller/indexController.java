@@ -23,7 +23,10 @@ public class indexController {
     @ResponseBody
     @PostMapping("/add")
     public returnMSG get(@RequestBody Map map) {
-        List<Long> jobs = new Gson().fromJson(new Gson().toJson(map.get("jobs")), new TypeToken<List<Long>>(){}.getType());
+        System.out.println(map);
+        List<Long> jobs=null;
+        if(map.get("jobs")!=null)
+            jobs = new Gson().fromJson(new Gson().toJson(map.get("jobs")), new TypeToken<List<Long>>(){}.getType());
 
         String pids= DataUtil.LongTransfer(jobs);
         String msg="";
@@ -56,7 +59,8 @@ public class indexController {
                 (Boolean) map.get("transfer"),
                 (Boolean) map.get("reStart"),
                 String.valueOf(map.get("policy")),
-                String.valueOf(map.get("jobType"))
+                String.valueOf(map.get("jobType")),
+                String.valueOf(map.get("shell"))
         );
         return returnMSG;
     }
