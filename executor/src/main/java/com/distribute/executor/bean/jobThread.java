@@ -57,6 +57,7 @@ public class jobThread extends Thread {
             boolean ok=true;
             waitCount++;
             SendJobMessage msg=null;
+            int execute=0;
             try {
                 //拿到msgQueue
                 msg = msgQueue.poll(3L, TimeUnit.SECONDS);
@@ -65,16 +66,23 @@ public class jobThread extends Thread {
                     log.info("msg:"+msg);
                     waitCount=0;
                     //填充各种属性，包括context等
-                    if(!fulfillProperty(msg)){
-                        log.info("参数错误");
-                        return;
+                    if(jobBean.shell_normal.equals(msg.getJob().getJobType())||jobBean.shell_passive.equals(msg.getJob().getJobType())) {
+                        if(!fillShellProp(msg)){
+                            log.info("参数错误");
+                            return;
+                        }
+                    }else{
+                        if(!fillMethodProp(msg)){
+                            log.info("参数错误");
+                            return;
+                        }
                     }
 
                     //初始化
                     this.handler.init();
 
                     //给handler执行
-                    this.handler.execute();
+                    execute = this.handler.execute();
 
                     //销毁
                     this.handler.destroy();
@@ -95,11 +103,12 @@ public class jobThread extends Thread {
                 log.info("execute over fail");
                 log.error(e.getMessage());
             }finally {
+                if(execute==0)ok=false;
                 //todo 设置requestId
                 Long requestId=new idUtil().nextId();
-                if(ok&&msg!=null){
+                if(ok){
                     backer.pushCallBack(new CallBackMessage(this.executorName, ResultEnum.success.result,msg.getShardIndex(),msg.getShardTotal(),jobId,requestId,msg.getExecId()));
-                }else if(!ok&&msg!=null){
+                }else if(msg != null){
                     //todo 失败了 添加报警
                     backer.pushCallBack(new CallBackMessage(this.executorName,ResultEnum.error.result,msg.getShardIndex(),msg.getShardTotal(),jobId,requestId,msg.getExecId()));
                 }
@@ -107,7 +116,7 @@ public class jobThread extends Thread {
         }
     }
 
-    public boolean fulfillProperty(SendJobMessage msg){
+    public boolean fillMethodProp(SendJobMessage msg){
         jobBean job = msg.getJob();
         this.job=job;
 //        Invocation invocation = job.getInvocation();
@@ -155,7 +164,31 @@ public class jobThread extends Thread {
         if(jobHandler !=null){
             jobHandler.setArgs(realArgs);
             this.handler=jobHandler;
+            return true;
         }
+        return false;
+    }
+
+    public boolean fillShellProp(SendJobMessage msg){
+        jobBean job = msg.getJob();
+        this.job=job;
+//        Invocation invocation = job.getInvocation();
+
+        //设置线程上下文 用于分片等
+        Integer index = msg.getShardIndex();
+        Integer total = msg.getShardTotal();
+        threadContext.setContext(new threadContext(job.getJobId(),index,total));
+
+        //String shell
+        String shell=job.getShell();
+        //设置handler，用于进行任务execute
+        List<String> parameterTypes= DataUtil.transferString(job.getParameterTypes());
+        List<String> args1 = DataUtil.transferString(job.getArgs());
+        //和普通Java任务不一样，ShellWorker每次都需要重新注册，因为Shell任务是可变的，
+        //需要根据每次发来的Shell请求内容变化
+        ShellWorker shellWorker = new ShellWorker(jobId,shell,index,total,args1);
+        jobInvoker.registJobHandler(String.valueOf(jobId),shellWorker);
+        this.handler=shellWorker;
         return true;
     }
 

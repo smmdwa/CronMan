@@ -27,7 +27,7 @@ public class methodWorker extends worker {
     }
 
     @Override
-    public void execute() throws Exception {
+    public int execute() throws Exception {
         Class<?>[] paramTypes = method.getParameterTypes();
         if (paramTypes.length > 0 && args!=null) {
 //            method.invoke(target, new Object[paramTypes.length]);       // method-param can not be primitive-types
@@ -37,6 +37,7 @@ public class methodWorker extends worker {
             method.invoke(target);
         }
         log.info("execute!");
+        return 1;
     }
 
     @Override

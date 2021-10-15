@@ -8,7 +8,7 @@ public abstract class worker {
      *
      * @throws Exception
      */
-    public abstract void execute() throws Exception;
+    public abstract int execute() throws Exception;
 
 
 	/*@Deprecated
