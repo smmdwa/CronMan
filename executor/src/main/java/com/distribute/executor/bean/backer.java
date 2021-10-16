@@ -30,7 +30,7 @@ public class backer {
     public backer(){
         callBackQueue=new LinkedBlockingQueue<>();
         this.client = (NettyClient) Context.getBean(NettyClient.class);
-        this.fileDir="data/need-to-back/"+this.client.getName()+"/";
+        this.fileDir="/data/need-to-back/"+this.client.getName()+"/";
         this.fileName=fileDir+"{temp}"+".log";
     }
 

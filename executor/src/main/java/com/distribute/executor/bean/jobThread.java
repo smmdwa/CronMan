@@ -67,12 +67,12 @@ public class jobThread extends Thread {
                     waitCount=0;
                     //填充各种属性，包括context等
                     if(jobBean.shell_normal.equals(msg.getJob().getJobType())||jobBean.shell_passive.equals(msg.getJob().getJobType())) {
-                        if(!fillShellProp(msg)){
+                        if(!fillMethodProp(msg)){
                             log.info("参数错误");
                             return;
                         }
                     }else{
-                        if(!fillMethodProp(msg)){
+                        if(!fillShellProp(msg)){
                             log.info("参数错误");
                             return;
                         }

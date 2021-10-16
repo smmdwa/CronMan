@@ -20,8 +20,8 @@ public class ShellWorker extends worker  {
     private final String logName;
 
     public ShellWorker(Long jobId,String shell,Integer index,Integer total,List<String> params){
-        this.fileName="data/shell/"+jobId+".sh";
-        this.logName="data/shell/"+jobId+"-log.sh";
+        this.fileName="/data/shell/"+jobId+".sh";
+        this.logName="/data/shell/"+jobId+"-log.sh";
         this.jobId=jobId;
         this.shell=shell;
         this.index=index;
