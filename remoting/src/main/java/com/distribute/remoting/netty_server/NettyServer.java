@@ -82,7 +82,7 @@ public class NettyServer {
                 public void operationComplete(ChannelFuture future) throws Exception {
                     //写操作完成，并没有错误发生
                     if (future.isSuccess()){
-                        log.info("send msg successful:"+msg);
+                        log.info("send msg successful:"+msg+" id:"+msg.getRequestId());
                     }else{
                         //记录错误
                         log.info("send msg error! time:"+time+" msg:"+msg);

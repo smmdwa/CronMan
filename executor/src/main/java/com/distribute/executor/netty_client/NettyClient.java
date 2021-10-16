@@ -1,5 +1,7 @@
 package com.distribute.executor.netty_client;
 
+import com.distribute.executor.Message.ResponseMessage;
+import com.distribute.executor.bean.backer;
 import com.distribute.executor.handler.ChatClientHandler;
 import com.distribute.executor.handler.ClientResponseHandler;
 import com.distribute.executor.handler.KillJobMessageHandler;
@@ -11,6 +13,8 @@ import com.distribute.executor.handler.MessageCodecSharable;
 import com.distribute.executor.handler.ProcotolFrameDecoder;
 import com.distribute.executor.handler.ResponseHandler;
 import com.distribute.executor.response.defaultFuture;
+import com.distribute.executor.utils.FutureUtil;
+import com.distribute.executor.utils.idUtil;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -26,6 +30,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,6 +38,8 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 @Component
 @Slf4j
@@ -55,18 +62,19 @@ public class NettyClient {
 
     private Map<String,Channel> channelMap=new HashMap<>();
 
-//    private Channel channel;
+    private List<String > addressList=new ArrayList<>();
 
-    private List<String > addressList;
+    //锁住 addressList和channelMap 发送消息的时候上读锁，断线、上线的时候上写锁修改addressList
+    private ReentrantReadWriteLock addressLock= new ReentrantReadWriteLock();
 
     private final Map<Long, defaultFuture> futureMap = new ConcurrentHashMap<>();
 
-    private ThreadPoolExecutor connectExecutor;
+    private ThreadPoolExecutor sendExecutor;
 
     @PostConstruct
     public void initialize(){
         this.addr=this.ip+":"+this.port;
-//        connectExecutor=new ThreadPoolExecutor(3,5,60, TimeUnit.SECONDS,new ArrayBlockingQueue<>(100));
+        sendExecutor=new ThreadPoolExecutor(2,5,60,TimeUnit.SECONDS,new ArrayBlockingQueue<>(100));
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -103,27 +111,41 @@ public class NettyClient {
                             p.addLast(new ChatClientHandler(name, addr));
                         }
                     });
-            addressList = DataUtil.transferString(remotingAddress);
-            for (String address : addressList) {
-                ChannelFuture f = b.connect(address.split(":")[0], Integer.parseInt(address.split(":")[1]));
-                f.addListener(new ChannelFutureListener() {
-                    @Override
-                    public void operationComplete(ChannelFuture channelFuture) throws Exception {
-                        if (channelFuture.isSuccess()) {
-                            System.out.println("connect success " + address + " " + Thread.currentThread());
-                        } else {
-                            //todo 二次重连
-                            System.out.println("connect error " + address + " " + Thread.currentThread());
+            List<String>tempAddressList=DataUtil.transferString(remotingAddress);
+            try{
+                addressLock.writeLock().lockInterruptibly();
+                for (String address : tempAddressList) {
+                    ChannelFuture f = b.connect(address.split(":")[0], Integer.parseInt(address.split(":")[1]));
+                    f.addListener(new ChannelFutureListener() {
+                        @Override
+                        public void operationComplete(ChannelFuture channelFuture) throws Exception {
+                            if (channelFuture.isSuccess()) {
+                                final boolean[] res = {false};
+                                // big bug  这里必须要新开一个线程，不然就不是同步等待了，
+                                // 因为此线程和 ClientResponseHandler 的线程是同一个线程
+                                sendExecutor.submit(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        boolean res =register(f.channel());
+                                        if(res){
+                                            //加入addressList中
+                                            channelMap.put(address, f.channel());
+                                            addressList.add(address);
+                                            log.info("连接remoting{}成功", address);
+                                        }
+                                    }
+                                });
+                            }
                         }
-                    }
-                });
-                f.sync();
-                channelMap.put(address, f.channel());
-                // 发送注册请求
-                sendMessage(address, new RegisterInMessage(addr, name, 5), 0);
-                log.info("连接remoting{}成功", address);
-                // 7.等待连接关闭（阻塞，直到Channel关闭）
-//                f.channel().closeFuture().sync();
+                    });
+                    f.sync();
+                    log.info("连接remoting{}", address);
+                }
+            }catch (Exception e ){
+                log.info(e.getMessage());
+            }
+            finally {
+                addressLock.writeLock().unlock();
             }
         }
         finally {
@@ -131,23 +153,81 @@ public class NettyClient {
         }
     }
 
+    private boolean register(Channel channel) {
+
+        //设置requestId和futureMap
+        defaultFuture future = new defaultFuture();
+        RegisterInMessage msg = new RegisterInMessage(addr, name, 5, new idUtil().nextId());
+        this.futureMap.put(msg.getRequestId(), future);
+        log.info("regi:"+msg.getRequestId());
+        // 发送注册请求
+        sendMessage(channel, msg, 0);
+
+        //等待响应
+        ResponseMessage responseMessage = FutureUtil.getFuture(this.futureMap, msg.getRequestId());
+        if (responseMessage == null || responseMessage.getCode() == ResponseMessage.error) {
+            log.info("register fail");
+            return false;
+        }else{
+            log.info("register success");
+            return true;
+        }
+    }
+    //将断联的调度器剔除map和list中
+    public void removeScheduler(Channel channel){
+        String address=null;
+        try {
+            this.addressLock.writeLock().lockInterruptibly();
+            for (Map.Entry<String, Channel> entry : this.getChannelMap().entrySet()) {
+                if(entry.getValue()==channel){
+                    address=entry.getKey();
+                    break;
+                }
+            }
+            if(address!=null){
+                log.info("removeScheduler:"+address);
+                this.addressList.remove(address);
+                this.channelMap.remove(address);
+            }
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }finally {
+            this.addressLock.writeLock().unlock();
+        }
+    }
+
     //3次重试，还失败就记录日志
     public void sendMessage(String addr,Message msg,Integer time){
+        Channel channel=null;
+        try {
+            addressLock.readLock().lockInterruptibly();
+            channel=channelMap.get(addr);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }finally {
+            addressLock.readLock().unlock();
+        }
+        if(channel==null)return;
+        doSendMessage(channel,msg,time);
+    }
+    public void sendMessage(Channel channel,Message msg,Integer time) {
+        if(channel==null)return;
+        doSendMessage(channel,msg,time);
+    }
+    private void doSendMessage(Channel channel,Message msg,Integer time){
         if(time<3){
-            Channel channel=channelMap.get(addr);
-            if(channel==null)return;
             ChannelFuture channelFuture = channel.writeAndFlush(msg);
             channelFuture.addListener(new ChannelFutureListener() {
                 @Override
                 public void operationComplete(ChannelFuture future) throws Exception {
                     //写操作完成，并没有错误发生
                     if (future.isSuccess()){
-                        log.info("send msg successful:"+msg);
+                        log.info("send msg successful:"+msg+" id:"+msg.getRequestId());
                     }else{
                         //记录错误
                         log.info("send msg error! time:"+time+" msg:"+msg);
                         future.cause().printStackTrace();
-                        sendMessage(addr,msg,time+1);
+                        doSendMessage(channel,msg,time+1);
                     }
                 }
             });
@@ -157,7 +237,25 @@ public class NettyClient {
         }
     }
 
-    public static void main(String[] args) throws InterruptedException {
-        new NettyClient().start();
-    }
+//    public static void main(String[] args) throws InterruptedException {
+//        ReentrantReadWriteLock lock= new ReentrantReadWriteLock();
+//
+//        try {
+//            lock.writeLock().lockInterruptibly();
+//            System.out.println("lock1");
+//            Reentrant(lock);
+//
+//        }finally {
+//            lock.writeLock().unlock();
+//        }
+//    }
+//
+//    public static void Reentrant(ReentrantReadWriteLock lock) throws InterruptedException {
+//        lock.writeLock().lockInterruptibly();
+//        System.out.println("lock2");
+//        lock.readLock().lockInterruptibly();;
+//        System.out.println("lock33");
+//        lock.readLock().unlock();;
+//        lock.writeLock().unlock();;
+//    }
 }

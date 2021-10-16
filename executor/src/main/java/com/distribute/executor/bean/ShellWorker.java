@@ -1,12 +1,14 @@
 package com.distribute.executor.bean;
 
 import com.distribute.executor.utils.FileUtil;
+import lombok.extern.slf4j.Slf4j;
 
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+@Slf4j
 public class ShellWorker extends worker  {
 
     private Long jobId;
@@ -51,8 +53,8 @@ public class ShellWorker extends worker  {
 
     public int realExecute(String[] contextParams) throws InterruptedException, IOException {
         List<String> cmd = new ArrayList<>();
-        cmd.add("sh ");
-        cmd.add(fileName+" ");
+        cmd.add("sh");
+        cmd.add(fileName);
         if (this.params!=null && this.params.size()>0) {
             cmd.addAll(this.params);
         }
@@ -61,8 +63,7 @@ public class ShellWorker extends worker  {
         }
         String[] realCmd = cmd.toArray(new String[0]);
 
-        System.out.println("cmd:"+ Arrays.toString(realCmd));
-        // process-exec
+        log.info("cmd:"+ Arrays.toString(realCmd));
         final Process process = Runtime.getRuntime().exec(realCmd);
 
         FileOutputStream out=new FileOutputStream(logName, true);

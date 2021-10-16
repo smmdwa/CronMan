@@ -10,10 +10,12 @@ public class defaultFuture {
     //超时就退出
     public ResponseMessage getResponse(long timeout) {
         long begin = System.currentTimeMillis();
+        //等待间隔，每隔一段时间就查看isSucceed是否为true
+        long waitBeat=timeout/10;
         synchronized (object) {
             while (!isSucceed&& (timeout - (System.currentTimeMillis() - begin))>0) {
                 try {
-                    object.wait(timeout);
+                    object.wait(waitBeat);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }

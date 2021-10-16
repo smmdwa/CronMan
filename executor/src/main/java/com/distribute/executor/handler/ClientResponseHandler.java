@@ -15,7 +15,7 @@ public class ClientResponseHandler extends SimpleChannelInboundHandler<ResponseM
     protected void channelRead0(ChannelHandlerContext channelHandlerContext, ResponseMessage msg) throws Exception {
         NettyClient instance =(NettyClient) Context.getBean("nettyClient");
         if( !FutureUtil.setFuture(instance.getFutureMap(),msg)){
-            log.info("no such requestId! msg:{}",msg);
+            log.info("no such requestId! msg:{},id:{}",msg,msg.getRequestId());
         }
     }
 }

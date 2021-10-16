@@ -153,8 +153,18 @@ public class backer {
     }
 
     private void tryToCallBack(CallBackMessage msg){
+        log.info("tryToCallBack:{} ",msg);
         boolean result = false;
-        for(String address:this.client.getAddressList()){
+        List<String>addressList=new ArrayList<>();
+        try {
+            this.client.getAddressLock().readLock().lockInterruptibly();
+            addressList=this.client.getAddressList();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }finally {
+            this.client.getAddressLock().readLock().unlock();
+        }
+        for(String address:addressList){
             //设置requestId和futureMap
             //每次都要重新设置，因为每次都会清空
             msg.setRequestId(new idUtil().nextId());
