@@ -36,9 +36,6 @@ public class execController {
     private ThreadPoolExecutor jobExecutor;
 
     @Autowired
-    jobSpringInvoker invoker;
-
-    @Autowired
     NettyClient client;
 
 

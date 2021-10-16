@@ -4,8 +4,10 @@ import com.distribute.executor.annotation.scheduleJob;
 import com.distribute.executor.bean.worker;
 import com.distribute.executor.bean.jobThread;
 import com.distribute.executor.bean.methodWorker;
+import com.distribute.executor.netty_client.NettyClient;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.lang.reflect.Method;
 import java.util.Map;
@@ -16,7 +18,12 @@ import java.util.concurrent.ConcurrentMap;
 @Data
 public class jobInvoker {
 
-    public void start(){}
+    @Autowired
+    NettyClient client;
+    //这里是总入口，所有的component都要从这里初始化
+    public void start(){
+
+    }
 
     public void destroy(){}
 
