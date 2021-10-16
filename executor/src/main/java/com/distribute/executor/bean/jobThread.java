@@ -104,13 +104,11 @@ public class jobThread extends Thread {
                 log.error(e.getMessage());
             }finally {
                 if(execute==0)ok=false;
-                //todo 设置requestId
-                Long requestId=new idUtil().nextId();
                 if(ok){
-                    backer.pushCallBack(new CallBackMessage(this.executorName, ResultEnum.success.result,msg.getShardIndex(),msg.getShardTotal(),jobId,requestId,msg.getExecId()));
+                    backer.pushCallBack(new CallBackMessage(this.executorName, ResultEnum.success.result,msg.getShardIndex(),msg.getShardTotal(),jobId,msg.getExecId()));
                 }else if(msg != null){
                     //todo 失败了 添加报警
-                    backer.pushCallBack(new CallBackMessage(this.executorName,ResultEnum.error.result,msg.getShardIndex(),msg.getShardTotal(),jobId,requestId,msg.getExecId()));
+                    backer.pushCallBack(new CallBackMessage(this.executorName,ResultEnum.error.result,msg.getShardIndex(),msg.getShardTotal(),jobId,msg.getExecId()));
                 }
             }
         }
@@ -180,7 +178,7 @@ public class jobThread extends Thread {
         threadContext.setContext(new threadContext(job.getJobId(),index,total));
 
         //String shell
-        String shell=job.getShell();
+        String shell=replace(job.getShell());
         //设置handler，用于进行任务execute
         List<String> parameterTypes= DataUtil.transferString(job.getParameterTypes());
         List<String> args1 = DataUtil.transferString(job.getArgs());
@@ -191,7 +189,17 @@ public class jobThread extends Thread {
         this.handler=shellWorker;
         return true;
     }
-
+    //替换换行符
+    private static String replace(String shellValue){
+        if(System.getProperty ("os.name").contains("Windows")){
+            return shellValue.replaceAll("\n","\r\n");
+        }else if(System.getProperty ("os.name").contains("Linux")){
+            return shellValue.replaceAll("\n","\r");
+        }else if(System.getProperty ("os.name").contains("Mac")){
+            return shellValue.replaceAll("\n","\n");
+        }
+        return shellValue;
+    }
     public void stopJob(){
         this.stop=true;
         this.interrupt();
