@@ -18,9 +18,7 @@ import java.util.concurrent.ConcurrentMap;
 @Data
 public class jobInvoker {
 
-    @Autowired
-    NettyClient client;
-    //这里是总入口，所有的component都要从这里初始化
+    //todo ? 这里是总入口，所有的component都要从这里初始化
     public void start(){
 
     }

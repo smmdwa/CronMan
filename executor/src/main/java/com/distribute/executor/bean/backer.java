@@ -30,7 +30,7 @@ public class backer {
     public backer(){
         callBackQueue=new LinkedBlockingQueue<>();
         this.client = (NettyClient) Context.getBean(NettyClient.class);
-        this.fileDir="/data/need-to-back/"+this.client.getName()+"/";
+        this.fileDir="./data/need-to-back/"+this.client.getName()+"/";
         this.fileName=fileDir+"{temp}"+".log";
     }
 
@@ -53,7 +53,6 @@ public class backer {
             public void run() {
                 while (!stop) {
 
-                    log.info("callBackThread run");
                     //drainto方法可以批量获取数据，但是它无法阻塞，如果队列为空就返回了
                     //因为drainto方法不阻塞，所以需要借用take方法的阻塞性  然后再塞回去
                     try {
@@ -145,7 +144,7 @@ public class backer {
                 continue;
             }
             CallBackMessage msg = (CallBackMessage) serialUtil.deserialize(bytes, CallBackMessage.class);
-            log.info("need to back:"+msg);
+            log.info("path:{},file:{}",file.getAbsolutePath(),file.getAbsoluteFile());
             file.delete();
             tryToCallBack(msg);
         }

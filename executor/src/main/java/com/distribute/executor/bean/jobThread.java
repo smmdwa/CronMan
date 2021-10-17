@@ -46,7 +46,6 @@ public class jobThread extends Thread {
         this.setName("jobThread-"+jobId);
         NettyClient client = (NettyClient) Context.getBean(NettyClient.class);
         this.executorName=client.getName();
-        log.info("executorName:"+this.executorName);
     }
 
     @Override
@@ -63,10 +62,10 @@ public class jobThread extends Thread {
                 msg = msgQueue.poll(3L, TimeUnit.SECONDS);
 
                 if(msg!=null){
-                    log.info("msg:"+msg);
+                    log.info("getmsg:"+msg);
                     waitCount=0;
                     //填充各种属性，包括context等
-                    if(jobBean.shell_normal.equals(msg.getJob().getJobType())||jobBean.shell_passive.equals(msg.getJob().getJobType())) {
+                    if(jobBean.java_normal.equals(msg.getJob().getJobType())||jobBean.java_passive.equals(msg.getJob().getJobType())) {
                         if(!fillMethodProp(msg)){
                             log.info("参数错误");
                             return;
@@ -77,7 +76,6 @@ public class jobThread extends Thread {
                             return;
                         }
                     }
-
                     //初始化
                     this.handler.init();
 
@@ -100,6 +98,7 @@ public class jobThread extends Thread {
                 }
             } catch (Exception e) {
                 ok=false;
+                e.printStackTrace();
                 log.info("execute over fail");
                 log.error(e.getMessage());
             }finally {
@@ -159,6 +158,7 @@ public class jobThread extends Thread {
             }
         }
         methodWorker jobHandler = (methodWorker)jobInvoker.loadJobHandler(methodName);
+        log.info("loadHandler:"+jobHandler);
         if(jobHandler !=null){
             jobHandler.setArgs(realArgs);
             this.handler=jobHandler;
@@ -191,6 +191,7 @@ public class jobThread extends Thread {
     }
     //替换换行符
     private static String replace(String shellValue){
+        if(shellValue==null||shellValue.length()==0)return shellValue;
         if(System.getProperty ("os.name").contains("Windows")){
             return shellValue.replaceAll("\n","\r\n");
         }else if(System.getProperty ("os.name").contains("Linux")){
