@@ -9,6 +9,7 @@
 
     </parent>
 
+
     <groupId>com.distribute</groupId>
     <artifactId>scheduler</artifactId>
     <version>0.0.1-SNAPSHOT</version>
