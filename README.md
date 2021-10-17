@@ -173,17 +173,18 @@ CronMan 可以分为三大模块（调度器集群、控制中心和执行器集
 <br>
 根据每个任务不同的需求，相应地配置不同的分片数、是否允许失效转移、是否允许错过作业重触发、选择执行器的策略等。
 <br>
-
+<br>
 
 <div ><img src="resource/pic2.png" width="480" /><img src="resource/pic-0.png" width="370" /></div>
 
-
+<br>
 <br>
 可通过依赖任务来配置依赖的**上游任务**，构成一个**DAG**图，任务以DAG图的形式执行，只有当上游任务都完成时，下游任务才能开始。
 <br>
+<br>
 <div align=center><img src="resource/pic4.png" width="890"/></div>
 <br>
-
+<br>
 
 
 
