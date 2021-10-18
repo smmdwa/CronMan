@@ -177,14 +177,15 @@ CronMan 可以分为三大模块（调度器集群、控制中心和执行器集
 <br>
 <br>
 
-<div ><img src="resource/new-1.png"  /><img src="resource/pic-0.png"  /></div>
+<div ><img src="resource/t1.png"  /></div>
+<div><img src="resource/t2.png" /></div>
 
 <br>
 <br>
 可通过依赖任务来配置依赖的**上游任务**，构成一个**DAG**图，任务以DAG图的形式执行，只有当上游任务都完成时，下游任务才能开始。
 <br>
 <br>
-<div align=center><img src="resource/pic4.png" width="890"/></div>
+<div align=center><img src="resource/t7.png" /></div>
 <br>
 <br>
 
@@ -198,13 +199,13 @@ CronMan 可以分为三大模块（调度器集群、控制中心和执行器集
 
 查看任务的**DAG依赖图**，包括上游和下游的所有关联任务。
 
-<div align=center><img src="resource/pic5.png" width="1200"/></div>
+<div align=center><img src="resource/t3.png" /></div>
 
 
 
 对**shell任务**，可以通过控制中心在线修改任务的具体内容。
 
-<div align=center><img src="resource/pic6.png" width="900"/></div>
+<div align=center><img src="resource/t6.png" /></div>
 
 
 
@@ -214,15 +215,14 @@ CronMan 可以分为三大模块（调度器集群、控制中心和执行器集
 
 点击 third_job 的``查看依赖``，就可以看见 third_job 的DAG任务依赖图。
 
-<div align=center><img src="resource/pic7.png" width="900"/></div>
+<div align=center><img src="resource/t4.png" /></div>
 
-<div align=center><img src="resource/pic8.png" width="900"/></div>
 
 
 
 点击 backUP的``查看依赖``，就可以看见 backUP的DAG任务依赖图。
 
-<div align=center><img src="resource/pic9.png" width="900"/></div>
+<div align=center><img src="resource/t5.png" /></div>
 
 
 
