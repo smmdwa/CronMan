@@ -1,8 +1,6 @@
 package com.distribute.remoting.netty_server;
 
 
-import com.distribute.remoting.Message.CallBackMessage;
-import com.distribute.remoting.Message.SendJobMessage;
 import com.distribute.remoting.bean.*;
 import com.distribute.remoting.mapper.JobMapper;
 import com.distribute.remoting.strategy.strategy;
@@ -13,7 +11,6 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
@@ -22,7 +19,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -31,7 +27,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 @AllArgsConstructor
 @Slf4j
 @Component
-public class routeInfoManager {
+public class RouteInfoManager {
 
     private final ReadWriteLock executorLock = new ReentrantReadWriteLock();
 
@@ -41,7 +37,7 @@ public class routeInfoManager {
     private final HashMap<String, executorLiveInfo> executorLiveTable;
 //    private final ConcurrentHashMap<Long, List<jobFinishDetail>>jobFinishTable;//任务完成情况表 jobId对应不同的detail
 
-    private volatile static routeInfoManager instance;
+    private volatile static RouteInfoManager instance;
 
     private LinkedBlockingQueue<jobFinishDetail> jobToBeTransferQueue;
 
@@ -59,7 +55,7 @@ public class routeInfoManager {
 //        return instance;
 //    }
 
-    public routeInfoManager() {
+    public RouteInfoManager() {
         this.executorAddrTable = new HashMap<String, executorInfo>(128);
         this.executorLiveTable = new HashMap<String, executorLiveInfo>(128);
         this.jobToBeTransferQueue=new LinkedBlockingQueue<>();

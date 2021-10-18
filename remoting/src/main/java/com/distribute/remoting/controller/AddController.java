@@ -2,7 +2,7 @@ package com.distribute.remoting.controller;
 
 import com.distribute.remoting.bean.jobBean;
 import com.distribute.remoting.bean.returnMSG;
-import com.distribute.remoting.netty_server.nameServerController;
+import com.distribute.remoting.netty_server.NameServerController;
 import com.distribute.remoting.utils.DataUtil;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -16,14 +16,14 @@ import java.util.Map;
 @Controller
 @CrossOrigin
 
-public class indexController {
+public class AddController {
 
     @Autowired
-    nameServerController controller;
+    NameServerController controller;
     @ResponseBody
     @PostMapping("/add")
     public returnMSG get(@RequestBody Map map) {
-        System.out.println(map);
+//        System.out.println(map);
         List<Long> jobs=null;
         if(map.get("jobs")!=null)
             jobs = new Gson().fromJson(new Gson().toJson(map.get("jobs")), new TypeToken<List<Long>>(){}.getType());

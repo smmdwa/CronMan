@@ -6,10 +6,7 @@ import com.distribute.executor.utils.Context;
 import com.distribute.executor.Message.CallBackMessage;
 import com.distribute.executor.Message.SendJobMessage;
 //import com.distribute.remoting.bean.Invocation;
-import com.distribute.executor.bean.ResultEnum;
-import com.distribute.executor.bean.jobBean;
 import com.distribute.executor.utils.DataUtil;
-import com.distribute.executor.utils.idUtil;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
@@ -25,7 +22,7 @@ public class jobThread extends Thread {
 //    @Autowired
 //    jobSpringInvoker invoker;
 
-    private worker handler;
+    private Worker handler;
 
     private Long jobId;
 
@@ -104,10 +101,10 @@ public class jobThread extends Thread {
             }finally {
                 if(execute==0)ok=false;
                 if(ok){
-                    backer.pushCallBack(new CallBackMessage(this.executorName, ResultEnum.success.result,msg.getShardIndex(),msg.getShardTotal(),jobId,msg.getExecId()));
+                    Backer.pushCallBack(new CallBackMessage(this.executorName, ResultEnum.success.result,msg.getShardIndex(),msg.getShardTotal(),jobId,msg.getExecId()));
                 }else if(msg != null){
                     //todo 失败了 添加报警
-                    backer.pushCallBack(new CallBackMessage(this.executorName,ResultEnum.error.result,msg.getShardIndex(),msg.getShardTotal(),jobId,msg.getExecId()));
+                    Backer.pushCallBack(new CallBackMessage(this.executorName,ResultEnum.error.result,msg.getShardIndex(),msg.getShardTotal(),jobId,msg.getExecId()));
                 }
             }
         }
@@ -157,8 +154,7 @@ public class jobThread extends Thread {
                 return false;
             }
         }
-        methodWorker jobHandler = (methodWorker)jobInvoker.loadJobHandler(methodName);
-        log.info("loadHandler:"+jobHandler);
+        methodWorker jobHandler = (methodWorker)jobInvoker.getWorker(methodName);
         if(jobHandler !=null){
             jobHandler.setArgs(realArgs);
             this.handler=jobHandler;
@@ -185,7 +181,7 @@ public class jobThread extends Thread {
         //和普通Java任务不一样，ShellWorker每次都需要重新注册，因为Shell任务是可变的，
         //需要根据每次发来的Shell请求内容变化
         ShellWorker shellWorker = new ShellWorker(jobId,shell,index,total,args1);
-        jobInvoker.registJobHandler(String.valueOf(jobId),shellWorker);
+        jobInvoker.registWorker(String.valueOf(jobId),shellWorker);
         this.handler=shellWorker;
         return true;
     }

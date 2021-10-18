@@ -1,10 +1,9 @@
 package com.distribute.executor.netty_client;
 
 
-import com.distribute.executor.bean.backer;
+import com.distribute.executor.bean.Backer;
 import com.distribute.executor.bean.jobThread;
 import com.distribute.executor.invoker.jobInvoker;
-import com.distribute.executor.invoker.jobSpringInvoker;
 import com.distribute.executor.Message.KillJobMessage;
 import com.distribute.executor.Message.Message;
 import com.distribute.executor.Message.ResponseMessage;
@@ -52,7 +51,7 @@ public class execController {
         //执行任务
         jobExecutor = new ThreadPoolExecutor(3, 5, 60, TimeUnit.SECONDS, new ArrayBlockingQueue<>(100));
 
-        backer.getInstance().start();
+        Backer.getInstance().start();
         log.info("initialize ===== ok");
     }
 

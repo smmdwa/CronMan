@@ -137,7 +137,7 @@ public class idUtil {
                 id = id % (maxDatacenterId + 1);
             }
         } catch (Exception e) {
-            System.out.println(" getDatacenterId: " + e.getMessage());
+//            System.out.println(" getDatacenterId: " + e.getMessage());
         }
         return id;
     }

@@ -3,8 +3,8 @@ package com.distribute.remoting.handler;
 import com.distribute.remoting.Message.Message;
 import com.distribute.remoting.Message.PingMessage;
 import com.distribute.remoting.Message.ResponseMessage;
-import com.distribute.remoting.netty_server.nameServerController;
-import com.distribute.remoting.netty_server.routeInfoManager;
+import com.distribute.remoting.netty_server.NameServerController;
+import com.distribute.remoting.netty_server.RouteInfoManager;
 import com.distribute.remoting.utils.Context;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
@@ -15,8 +15,8 @@ public class PingHandler extends SimpleChannelInboundHandler<PingMessage> {
     @Override
     protected void channelRead0(ChannelHandlerContext channelHandlerContext, PingMessage pingMessage) throws Exception {
         String name = pingMessage.getName();
-        routeInfoManager manager = (routeInfoManager) Context.getBean(routeInfoManager.class);
-        nameServerController controller =(nameServerController)Context.getBean("nameServerController");
+        RouteInfoManager manager = (RouteInfoManager) Context.getBean(RouteInfoManager.class);
+        NameServerController controller =(NameServerController)Context.getBean("nameServerController");
         boolean result = manager.updateActiveExecutor(name);
         if(!result){
             log.info("RegisterHandler === 出错 msg:{}",pingMessage);

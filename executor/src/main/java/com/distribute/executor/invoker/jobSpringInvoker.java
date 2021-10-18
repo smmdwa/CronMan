@@ -82,7 +82,7 @@ public class jobSpringInvoker extends jobInvoker implements ApplicationContextAw
                 Method executeMethod = methodXxlJobEntry.getKey();
                 scheduleJob scheduleJob = methodXxlJobEntry.getValue();
                 // regist
-                registJobHandler(scheduleJob, bean, executeMethod);
+                registAnnotationWorker(scheduleJob, bean, executeMethod);
             }
         }
         log.info("initJobHandlerMethodRepository");

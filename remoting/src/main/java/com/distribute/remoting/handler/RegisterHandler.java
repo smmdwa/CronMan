@@ -1,11 +1,10 @@
 package com.distribute.remoting.handler;
 
 
-import com.distribute.remoting.Message.Message;
 import com.distribute.remoting.Message.RegisterInMessage;
 import com.distribute.remoting.Message.ResponseMessage;
-import com.distribute.remoting.netty_server.nameServerController;
-import com.distribute.remoting.netty_server.routeInfoManager;
+import com.distribute.remoting.netty_server.NameServerController;
+import com.distribute.remoting.netty_server.RouteInfoManager;
 import com.distribute.remoting.utils.Context;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
@@ -20,8 +19,8 @@ public class RegisterHandler extends SimpleChannelInboundHandler<RegisterInMessa
         Integer level=msg.getLevel();
 
         log.info("register name:"+name+" addr:"+addr+" level:"+level+" channel:"+channelHandlerContext.channel());
-        routeInfoManager manager = (routeInfoManager) Context.getBean(routeInfoManager.class);
-        nameServerController controller =(nameServerController)Context.getBean("nameServerController");
+        RouteInfoManager manager = (RouteInfoManager) Context.getBean(RouteInfoManager.class);
+        NameServerController controller =(NameServerController)Context.getBean("nameServerController");
 
         boolean result = manager.registerExecutor(name, addr, channelHandlerContext.channel(),level);
 

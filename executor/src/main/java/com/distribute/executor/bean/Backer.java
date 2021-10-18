@@ -15,7 +15,7 @@ import java.util.Random;
 import java.util.concurrent.LinkedBlockingQueue;
 
 @Slf4j
-public class backer {
+public class Backer {
 
     private LinkedBlockingQueue<CallBackMessage> callBackQueue;
 
@@ -27,20 +27,20 @@ public class backer {
     private final String fileName;
     private static final Long watcherSleepTime=30 *1000L;
 
-    public backer(){
+    public Backer(){
         callBackQueue=new LinkedBlockingQueue<>();
         this.client = (NettyClient) Context.getBean(NettyClient.class);
         this.fileDir="./data/need-to-back/"+this.client.getName()+"/";
         this.fileName=fileDir+"{temp}"+".log";
     }
 
-    private volatile static backer instance;
+    private volatile static Backer instance;
 
-    public static backer getInstance() {
+    public static Backer getInstance() {
         if (instance == null) {
-            synchronized (backer.class) {
+            synchronized (Backer.class) {
                 if (instance == null) {
-                    instance = new backer();
+                    instance = new Backer();
                 }
             }
         }
@@ -56,10 +56,10 @@ public class backer {
                     //drainto方法可以批量获取数据，但是它无法阻塞，如果队列为空就返回了
                     //因为drainto方法不阻塞，所以需要借用take方法的阻塞性  然后再塞回去
                     try {
-                        CallBackMessage msg = backer.this.callBackQueue.take();
+                        CallBackMessage msg = Backer.this.callBackQueue.take();
                         // 拿到要发送的msg
                         List<CallBackMessage> callbackParamList = new ArrayList<>();
-                        backer.this.callBackQueue.drainTo(callbackParamList);
+                        Backer.this.callBackQueue.drainTo(callbackParamList);
                         callbackParamList.add(msg);
                         // 发送msg
                         for(CallBackMessage message:callbackParamList){
@@ -81,7 +81,7 @@ public class backer {
             public void run() {
                 while (true){
                     try {
-                        Thread.sleep(backer.watcherSleepTime);
+                        Thread.sleep(Backer.watcherSleepTime);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
@@ -168,14 +168,14 @@ public class backer {
             //每次都要重新设置，因为每次都会清空
             msg.setRequestId(new idUtil().nextId());
             defaultFuture future = new defaultFuture();
-            Map<Long, defaultFuture> futureMap = backer.this.client.getFutureMap();
+            Map<Long, defaultFuture> futureMap = Backer.this.client.getFutureMap();
             futureMap.put(msg.getRequestId(),future);
 
             //发送消息
-            backer.this.client.sendMessage(address,msg,0);
+            Backer.this.client.sendMessage(address,msg,0);
 
             //等待响应
-            ResponseMessage responseMessage = FutureUtil.getFuture(backer.this.client.getFutureMap(),msg.getRequestId());
+            ResponseMessage responseMessage = FutureUtil.getFuture(Backer.this.client.getFutureMap(),msg.getRequestId());
             if(responseMessage==null||responseMessage.getCode()==ResponseMessage.error){
                 //超时或者任务失败 需要进行持久化
                 log.info("callBack job fail");

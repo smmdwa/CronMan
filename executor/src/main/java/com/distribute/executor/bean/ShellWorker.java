@@ -9,7 +9,7 @@ import java.util.Arrays;
 import java.util.List;
 
 @Slf4j
-public class ShellWorker extends worker  {
+public class ShellWorker extends Worker {
 
     private Long jobId;
     private String shell;

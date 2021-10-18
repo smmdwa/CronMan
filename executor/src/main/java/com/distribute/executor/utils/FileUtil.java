@@ -9,7 +9,7 @@ public class FileUtil {
         try {
             long total = 0;
             for (;;) {
-                System.out.println("input:"+inputStream);
+//                System.out.println("input:"+inputStream);
                 int res = inputStream.read(buffer);
                 if (res == -1) {
                     break;

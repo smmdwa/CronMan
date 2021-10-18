@@ -6,7 +6,7 @@ import java.lang.reflect.Method;
 import java.util.List;
 
 @Slf4j
-public class methodWorker extends worker {
+public class methodWorker extends Worker {
 
     private final Object target;
     private final Method method;

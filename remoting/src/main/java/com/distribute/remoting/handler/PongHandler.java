@@ -7,6 +7,6 @@ public class PongHandler extends ChannelInboundHandlerAdapter{
     // 接收响应消息
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-        System.out.println("pong:"+msg);
+//        System.out.println("pong:"+msg);
     }
 }

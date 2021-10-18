@@ -39,7 +39,7 @@ public class ChatClientHandler extends SimpleChannelInboundHandler<String> {
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, String msg) throws Exception {
 //        message=msg.trim();
-        System.out.println("last:"+msg);
+//        System.out.println("last:"+msg);
     }
 
     @Override

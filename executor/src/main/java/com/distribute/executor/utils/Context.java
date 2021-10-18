@@ -19,7 +19,7 @@ public class Context implements ApplicationContextAware {
     @Override
     public void setApplicationContext(ApplicationContext contex)
             throws BeansException {
-        System.out.println("Context set");
+//        System.out.println("Context set");
         context = contex;
     }
 

@@ -1,7 +1,6 @@
 package com.distribute.executor.netty_client;
 
 import com.distribute.executor.Message.ResponseMessage;
-import com.distribute.executor.bean.backer;
 import com.distribute.executor.handler.ChatClientHandler;
 import com.distribute.executor.handler.ClientResponseHandler;
 import com.distribute.executor.handler.KillJobMessageHandler;
@@ -11,7 +10,6 @@ import com.distribute.executor.Message.Message;
 import com.distribute.executor.Message.RegisterInMessage;
 import com.distribute.executor.handler.MessageCodecSharable;
 import com.distribute.executor.handler.ProcotolFrameDecoder;
-import com.distribute.executor.handler.ResponseHandler;
 import com.distribute.executor.response.defaultFuture;
 import com.distribute.executor.utils.FutureUtil;
 import com.distribute.executor.utils.idUtil;
@@ -26,7 +24,6 @@ import io.netty.handler.timeout.IdleStateHandler;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
@@ -38,7 +35,6 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 @Component

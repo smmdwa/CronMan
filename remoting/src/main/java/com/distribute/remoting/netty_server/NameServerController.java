@@ -20,7 +20,6 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.ibatis.annotations.Mapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Component;
@@ -45,7 +44,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 @Slf4j
 @Component
 @DependsOn({"routeInfoManager", "context"})
-public class nameServerController {
+public class NameServerController {
 //    private volatile static nameServerController instance;
 
     @Resource
@@ -69,7 +68,7 @@ public class nameServerController {
     private ReadWriteLock lock ;
 
     @Autowired
-    routeInfoManager routemanager;
+    RouteInfoManager routemanager;
 //    private final routeInfoManager routemanager=routeInfoManager.getInstance();
 
     @Autowired
@@ -99,7 +98,7 @@ public class nameServerController {
             public void run() {
                 //注意这里会一直卡住，同步等待结束 所以要用一个线程装
                 try {
-                    nameServerController.this.server.start();
+                    NameServerController.this.server.start();
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -111,7 +110,7 @@ public class nameServerController {
         this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
             @Override
             public void run() {
-                nameServerController.this.routemanager.scanNotActiveExecutor();
+                NameServerController.this.routemanager.scanNotActiveExecutor();
             }
         }, 5, 10 , TimeUnit.SECONDS);
 
@@ -170,13 +169,11 @@ public class nameServerController {
         }finally {
             lock.writeLock().unlock();
         }
-        System.out.println("ff"+replace(shell));
         return new returnMSG<ResultDAG>(200,"success",null,0);
     }
 
     //替换换行符
     public static String replace(String shellValue){
-        System.out.println(shellValue);
         if(System.getProperty ("os.name").contains("Windows")){
             return shellValue.replaceAll("\n","\r\n");
         }else if(System.getProperty ("os.name").contains("Linux")){
@@ -407,7 +404,7 @@ public class nameServerController {
                             //被动任务直接跳过 依赖任务先判断依赖任务是否全部完成
                             if(jobBean.java_passive.equals(job.getJobType())||jobBean.shell_passive.equals(job.getJobType())) {
                                 continue;
-                            }else if(job.getPids()!=null&&!isDependFinishNormal(job.getPids())){
+                            }else if(job.getPids()!=null&&job.getPids().length()!=0&&!isDependFinishNormal(job.getPids())){
                                 continue;
                             }
                             if(job.getNextStartTime()<readTime-fetchTime){
@@ -594,7 +591,7 @@ public class nameServerController {
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-                nameServerController.this.routemanager.sendJobToExecutor(jojo);
+                NameServerController.this.routemanager.sendJobToExecutor(jojo);
             }
         });
 //        //更新jobtable

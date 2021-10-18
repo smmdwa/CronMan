@@ -1,6 +1,6 @@
 package com.distribute.executor.bean;
 
-public abstract class worker {
+public abstract class Worker {
 
 
     /**

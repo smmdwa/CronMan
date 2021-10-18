@@ -2,7 +2,7 @@ package com.distribute.remoting.controller;
 
 import com.distribute.remoting.bean.jobBean;
 import com.distribute.remoting.bean.returnMSG;
-import com.distribute.remoting.netty_server.nameServerController;
+import com.distribute.remoting.netty_server.NameServerController;
 import com.distribute.remoting.utils.DataUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -13,10 +13,10 @@ import java.util.List;
 
 @Controller
 @CrossOrigin
-public class tempController {
+public class OrderController {
 
     @Autowired
-    nameServerController controller;
+    NameServerController controller;
 
     @RequestMapping("/data/{page}/{size}")
     @ResponseBody
