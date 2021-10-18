@@ -177,7 +177,7 @@ CronMan 可以分为三大模块（调度器集群、控制中心和执行器集
 <br>
 <br>
 
-<div ><img src="resource/pic2.png" width="480" /><img src="resource/pic-0.png" width="370" /></div>
+<div ><img src="resource/new-1.png" width="480" /><img src="resource/pic-0.png" width="370" /></div>
 
 <br>
 <br>
