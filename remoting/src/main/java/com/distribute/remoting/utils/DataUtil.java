@@ -6,6 +6,7 @@ import java.util.List;
 
 public class DataUtil {
     public static List<String> transferString(String temp){
+        if(temp==null||temp.length()==0)return null;
         List<String> list=new ArrayList<>();
         String[] split = temp.split(";");
         Collections.addAll(list, split);
