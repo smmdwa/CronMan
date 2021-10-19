@@ -14,7 +14,7 @@ public class helloService  {
     public void hello(String name,Integer id){
         int shardIndex = threadContext.getExecutorContext().getShardIndex();
         int total = threadContext.getExecutorContext().getShardTotal();
-        log.info("任务开始 hello0==============");
+        log.info("任务开始 hello==============");
         log.info("hello0");
         try {
             Thread.sleep(10000);
@@ -26,29 +26,6 @@ public class helloService  {
         log.info("任务结束 hello0==============");
     }
 
-
-    @scheduleJob(name = "hello1")
-    public void hello1(String name,Integer id){
-        int shardIndex = threadContext.getExecutorContext().getShardIndex();
-        int total = threadContext.getExecutorContext().getShardTotal();
-        log.info("任务开始 hello1==============");
-        log.info("helooooooooooooooooooooooooooooooooooooooo");
-        log.info("任务结束 hello1==============");
-    }
-
-    @scheduleJob(name = "hello2")
-    public void hello2(String name,Integer id){
-        int shardIndex = threadContext.getExecutorContext().getShardIndex();
-        int total = threadContext.getExecutorContext().getShardTotal();
-        try {
-            Thread.sleep(10000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        log.info("任务开始 hello2==============");
-        log.info("fffffffffffffffff==========================");
-        log.info("任务结束 hello2==============");
-    }
 
     @scheduleJob(name = "hello_passive")
     public void hello_passive(String name,Integer id){
