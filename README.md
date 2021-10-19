@@ -20,7 +20,7 @@ CronMan是一款轻量级的分布式任务调度系统。随着微服务化架�
   * [任务配置](#任务配置)
   * [任务监控](#任务监控)
   * [任务依赖](#任务依赖)
-  
+
 ## 功能
 
 - **定时任务**：调度系统最基础的功能，定时完成用户提出的任务，可实现**秒级任务**调度。
@@ -78,32 +78,32 @@ CronMan 可以分为三大模块（调度器集群、控制中心和执行器集
 **举例：**
 
 - 场景
-    1. 每天凌晨1点跑单查hive，进行每日清算。
-    
-    2. 用户下单后长时间未支付，需要修改订单状态。
-    
-    3. 电商整点抢购，商品价格0点整开始优惠。  
-    
-    4. 发放优惠券、发送短信提醒等。
+  1. 每天凌晨1点跑单查hive，进行每日清算。
+
+  2. 用户下单后长时间未支付，需要修改订单状态。
+
+  3. 电商整点抢购，商品价格0点整开始优惠。  
+
+  4. 发放优惠券、发送短信提醒等。
 
 
 - 解决
 
-    通过分布式系统来调度任务，最主要的功能就是将任务分解为**子分片**，每个分片绑定一台机器处理对应的任务。
-    
-    对一般场景而言，一个任务可能由**多个操作**组合而成，而将这些操作**分解**依次派发给子分片来完成。
-    
-        比如`` 发送短信``的任务，需要发送三千万条生日祝福短信，使用十个分片。每个分片只需要发送三百万条短信。
-        就极大缓解了机器的压力。
-        
-        比如`` 发放生日优惠券``的任务，需要先查用户信息库，获取需要派发优惠券的用户信息，再操作用户卡券库，
-        检验是否优惠券已存在、增添优惠券等流程，就可以用不同分片来处理不同操作。
-        
-    对复杂场景而言，如果存在分库分表的情况下，可以对任务继续细分。
-    
-        比如`` 发放生日优惠券``的任务，需要先查用户信息库，获取需要派发优惠券的用户信息。
-        这时候可以选择让一台分片机器专门负责查询用户信息，一台分片机器专门查询用户卡券信息，
-        避免了多台机器对同一数据库资源的竞争。
+  通过分布式系统来调度任务，最主要的功能就是将任务分解为**子分片**，每个分片绑定一台机器处理对应的任务。
+
+  对一般场景而言，一个任务可能由**多个操作**组合而成，而将这些操作**分解**依次派发给子分片来完成。
+
+      比如`` 发送短信``的任务，需要发送三千万条生日祝福短信，使用十个分片。每个分片只需要发送三百万条短信。
+      就极大缓解了机器的压力。
+      
+      比如`` 发放生日优惠券``的任务，需要先查用户信息库，获取需要派发优惠券的用户信息，再操作用户卡券库，
+      检验是否优惠券已存在、增添优惠券等流程，就可以用不同分片来处理不同操作。
+
+  对复杂场景而言，如果存在分库分表的情况下，可以对任务继续细分。
+
+      比如`` 发放生日优惠券``的任务，需要先查用户信息库，获取需要派发优惠券的用户信息。
+      这时候可以选择让一台分片机器专门负责查询用户信息，一台分片机器专门查询用户卡券信息，
+      避免了多台机器对同一数据库资源的竞争。
 
 
 
@@ -178,13 +178,17 @@ CronMan 可以分为三大模块（调度器集群、控制中心和执行器集
 <br>
 
 <div ><img src="resource/t1.png"  /></div>
+
 <br>
+
 <div><img src="resource/t2.png" /></div>
 
 可通过依赖任务来配置依赖的上游任务，构成一个DAG图。任务以DAG图的形式执行，只有当上游任务都完成时，下游任务才能开始。
 <br>
 <br>
+
 <div align=center><img src="resource/t7.png" /></div>
+
 <br>
 <br>
 
@@ -229,6 +233,113 @@ CronMan 可以分为三大模块（调度器集群、控制中心和执行器集
 
 
 
-## 最佳实践
+## 实践和使用
 
-TODO====
+CronMan是SpringBoot项目，使用者暂时也需要用SpringBoot来使用执行器。（因为楼主要写论文，所以没有太多空闲时间用来适配各种其他的项目）
+
+### 使用流程
+
+```
+1. 下载项目 & 打包执行器(executor)模块
+
+2. 配置数据库
+
+3. 将1.中打好的包作为依赖引入你自己的项目中
+
+4. 为你的任务添加上@scheduleJob注解，并在数据库/控制台添加上这个定时任务
+```
+
+
+
+### 示例
+
+**设定任务：**
+
+添加定时任务，每分钟备份一次数据库demo和demo2，每个数据库中各有一百万条记录，将sql存储到磁盘中。设置两个分片来完成这个任务。
+
+1. 首先下载整个项目。
+    
+    ```
+    git clone git@github.com:smmdwa/CronMan.git
+    ```
+
+2. 使用assembly:assembly 的maven插件可以快速进行打包（PS：这里不要用SpringBoot的打包插件，因为Spring Boot 中默认打包成的 jar 是 ``可执行`` jar，无法被依赖）
+
+3. 利用项目中的sql/cronjob.sql 配置数据库
+
+4. 配置调度器的application.yml
+
+   ```
+   spring:
+     datasource:
+       driver-class-name: com.mysql.cj.jdbc.Driver
+       url: jdbc:mysql://192.168.213.130:3306/cronjob?characterEncoding=utf-8&useSSL=false&useAffectedRows=true
+       username: root
+       password: 123456
+   server:
+     port: 8081
+   
+   #netty监听端口
+   remoting:
+     address: 127.0.0.1:8088
+     
+   #mybatis的相关配置
+   mybatis:
+     mapper-locations: classpath:mapper/*.xml
+     type-aliases-package: com.distribute.remoting.bean
+     configuration:
+       map-underscore-to-camel-case: true
+   ```
+
+5. 新建一个SpringBoot项目demo，这里采用的是本地依赖，新建lib目录，放入2.中打好的jar包，引入依赖。
+
+    ```
+            <dependency>
+                <groupId>com.distribute</groupId>
+                <artifactId>executor</artifactId>
+                <version>0.0.1</version>
+                <scope>system</scope>
+                <systemPath>${project.basedir}/lib/executor-0.0.1-SNAPSHOT.jar</systemPath>
+            </dependency>
+    ```
+
+6. 注入bean
+
+    ```
+    @Configuration
+    @ComponentScan(basePackages = {"com.distribute"})
+    public class CronConfig {
+    }
+    ```
+
+7. 编写备份任务
+
+    <div align=center><img src="resource/res-3.png" /></div>
+
+8. 配置demo项目的application.yml
+
+    ```
+    executor:
+      name: executor-1
+      ip: 127.0.0.1
+      port: 8092
+    remoting:
+      address: 127.0.0.1:8088;127.0.0.1:8089
+    server:
+      port: 8092
+    controller:
+      channel:
+        expiredTime: 30000
+    ```
+
+9. 启动一台调度器和两台执行器（记得修改port和remoting.address）
+10. 成功！
+
+    <div align=center><img src="resource/res-2.png" /></div>
+
+    <div align=center><img src="resource/res-1.png" /></div>
+
+
+
+
+

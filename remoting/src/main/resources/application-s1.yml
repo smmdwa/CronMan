@@ -1,6 +1,4 @@
 spring:
-  thymeleaf:
-    cache: false
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://192.168.213.130:3306/cronjob?characterEncoding=utf-8&useSSL=false&useAffectedRows=true
