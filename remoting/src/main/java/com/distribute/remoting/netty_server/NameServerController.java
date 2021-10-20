@@ -817,23 +817,6 @@ public class NameServerController {
 //        clazz.getMethod("hello").invoke(clazz.newInstance());
 
 
-        ReentrantReadWriteLock reentrantReadWriteLock = new ReentrantReadWriteLock();
-        reentrantReadWriteLock.readLock().lockInterruptibly();
-
-        System.out.println("ff");
-        reentrantReadWriteLock.readLock().unlock();
-
-        reentrantReadWriteLock.writeLock().lockInterruptibly();
-        System.out.println("gg");
-        reentrantReadWriteLock.writeLock().lockInterruptibly();
-        reentrantReadWriteLock.readLock().lockInterruptibly();
-
-        System.out.println("ff");
-        reentrantReadWriteLock.readLock().unlock();
-        System.out.println("ggsdss");
-        reentrantReadWriteLock.writeLock().unlock();
-
-        reentrantReadWriteLock.writeLock().unlock();
 
     }
 
