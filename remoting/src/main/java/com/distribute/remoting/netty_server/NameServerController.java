@@ -528,58 +528,6 @@ public class NameServerController {
             }
         }
     }
-//    //定时扫描jobTable
-//    public void scanJobTable() throws ParseException {
-//
-//        //=====================================================
-//        try {
-//            Thread.sleep(1000);
-//        } catch (InterruptedException e) {
-//            e.printStackTrace();
-//        }
-//
-//
-//        if(testTime==4){
-//            List<Long>list=new ArrayList<>();
-//            list.add((long) 1);
-//            list.add((long) 2);
-////            addJobController("job1",null,"com.distribute.executor.service.helloService","hello", Arrays.asList("java.lang.String","java.lang.Integer"),Arrays.asList("dyw","18"),"* * * 8-31 * ?");
-////            addJobController("job2",null,"com.distribute.executor.service.helloService","hello1", Arrays.asList("java.lang.String","java.lang.Integer"),Arrays.asList("dyw","18"),"* * * 8-31 * ?");
-////            addJobController("job3",list,"com.distribute.executor.service.helloService","hello2", Arrays.asList("java.lang.String","java.lang.Integer"),Arrays.asList("dyw","18"),null);
-//
-//        }
-//        testTime--;
-//
-//        //=====================================================
-//        long currentTime=System.currentTimeMillis();
-//        for (Map.Entry< Long,  jobExecInfo> next : this.jobTable.entrySet()) {
-//            log.info("jobBeanInfos:"+next.getValue());
-//            jobBean jojo = next.getValue().getJob();
-//            long nextStartTime = jojo.getNextStartTime();
-//            if(nextStartTime==0L){
-//                //依赖任务 直接跳过
-//                continue;
-//            }
-//            if(nextStartTime>currentTime&&nextStartTime-currentTime<fetchTime){
-//                //到时间了，发送给executor
-//                // 查询任务状态
-//                // 1. 如果是正在执行，为了保持幂等性（同一个分片同一时间只能操作一个任务），不能执行
-//                // 2. 如果是初始状态或者最终状态，就可以发送
-//                jobExecInfo info = this.jobTable.get(jojo.getId());
-//                if(info==null||info.getStatus()==jobExecInfo.init||info.getStatus()==jobExecInfo.finish){
-//                    sendJobToExecutor(jojo);
-//                }
-//            }else if(nextStartTime<currentTime){
-//                //过期任务，判断是否允许错过重触发
-//                if(jojo.isRestart()){
-//                    sendJobToExecutor(jojo);
-//                }
-//            }
-//        }
-//        log.info("scanJobTable ===== end");
-//    }
-
-
 
     private void sendJobToExecutor(jobBean jojo){
         //推送给executor
@@ -594,15 +542,6 @@ public class NameServerController {
                 NameServerController.this.routemanager.sendJobToExecutor(jojo);
             }
         });
-//        //更新jobtable
-//        this.jobTable.get(jojo.getId()).setStatus(jobExecInfo.doing);
-//        long nextTwoTime=0L;
-//        //更新nextStartTime
-//        if(!isRestart)
-//            nextTwoTime=getNextTwoTime(jojo.getCronExpr());
-//        else
-//            nextTwoTime=getNextStartTime(jojo.getCronExpr());
-//        jojo.setNextStartTime(nextTwoTime);
     }
 
 
@@ -643,10 +582,6 @@ public class NameServerController {
         return 0L;
     }
 
-//    public void handleCallBackMessage(CallBackMessage msg) {
-//        int result = handleCallBack(msg);
-//    }
-
     //接受CallBackMessage，维护任务table
     //    1.如果code为200，任务完成，则设置isfinish=true
     //    2.         300, 任务出错，则认定为任务失败
@@ -663,7 +598,6 @@ public class NameServerController {
             lock.writeLock().lockInterruptibly();
             //修改状态 不需要修改executor_name
             mapper.updateJobDetail(jobId,execId,name,code,"");
-
             if(code== ResultEnum.success.result){
                 //检查是否全部完成
                 if(isFinish(jobId,execId)){
@@ -692,17 +626,6 @@ public class NameServerController {
         }
         return new ResponseMessage(msg.getRequestId(),200,"success");
     }
-
-//    //修改jobFinishDetail的状态
-//    private void setStatus(List<jobFinishDetail> details,Long jobId,Integer code,boolean result){
-//        for(jobFinishDetail detail:details){
-//            if(detail.getJobId().equals(jobId)){
-//                //找到对应的detail，修改code和状态
-//                detail.setCode(code);
-//                detail.setFinish(result);
-//            }
-//        }
-//    }
 
     //检查是否全部完成
     private boolean isFinish(Long jobId,Integer execId){
