@@ -53,17 +53,6 @@ public class NameServerController {
     @Autowired
     JobMapper mapper;
 
-//    public static nameServerController getInstance() {
-//        if (instance == null) {
-//            synchronized (nameServerController.class) {
-//                if (instance == null) {
-//                    instance = new nameServerController();
-//                }
-//            }
-//        }
-//        return instance;
-//    }
-
     //等于routemanager的dataLock
     private ReadWriteLock lock ;
 
@@ -73,6 +62,9 @@ public class NameServerController {
 
     @Autowired
     NettyServer server;
+
+    //用来控制toBeRingThread的唤醒和睡眠
+    private final Object obj=new Object();
 
 //    private final  ConcurrentHashMap<Long, jobExecInfo> jobTable=new ConcurrentHashMap<>(128);
 
@@ -89,7 +81,9 @@ public class NameServerController {
 
     private volatile Map<Integer,List<Long>> timeRing=new HashMap<>();
 
+    private toBeRunJobThread toBeRunJobThread;
 
+    private toBeRingThread toBeRingThread;
     @PostConstruct
     public void initialize() {
         this.lock=routemanager.getDataLock();
@@ -124,12 +118,12 @@ public class NameServerController {
         //专门用来发送
         sendJobThread.getInstance();
 
-        toBeRunJobThread toBeRunJobThread = new toBeRunJobThread();
+        toBeRunJobThread = new toBeRunJobThread();
         toBeRunJobThread.setDaemon(true);
         toBeRunJobThread.setName("toBeRunJob");
         toBeRunJobThread.start();
 
-        toBeRingThread toBeRingThread = new toBeRingThread();
+        toBeRingThread = new toBeRingThread();
         toBeRingThread.setDaemon(true);
         toBeRingThread.setName("toBeRing");
         toBeRingThread.start();
@@ -337,7 +331,6 @@ public class NameServerController {
         return new returnMSG(200,"success",null,0);
     }
 
-
     //启动前 5秒 读取任务
     private final long fetchTime=5 * 1000;
 
@@ -442,7 +435,13 @@ public class NameServerController {
                         }
                         log.info("更改完成");
 
-
+                        //如果时间轮里有任务，并且toBeRingThread的状态是waited，就唤醒它
+                        synchronized (obj){
+                            if(!timeRing.isEmpty()&&toBeRingThread.getState().equals(Thread.State.WAITING)){
+                                log.info("唤醒toBeRingThread");
+                                obj.notify();
+                            }
+                        }
                     } catch (SQLException e) {
                         e.printStackTrace();
                     }finally {
@@ -494,15 +493,11 @@ public class NameServerController {
         @Override
         public void run() {
             while (true){
-                try {
-                    TimeUnit.MILLISECONDS.sleep(1000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-
+                log.info("时间轮任务开始===");
                 // item放着jobId
                 List<Long> ringItemData = new ArrayList<>();
-                int nowSecond = Calendar.getInstance().get(Calendar.SECOND);   // 避免处理耗时太长，跨过刻度，向前校验一个刻度；
+                //获取当前时刻的秒数，1秒，2秒
+                int nowSecond = Calendar.getInstance().get(Calendar.SECOND);
                 for (int i = 0; i < 2; i++) {
                     List<Long> tmpData = timeRing.remove( (nowSecond+60-i)%60 );
                     if (tmpData != null) {
@@ -525,6 +520,25 @@ public class NameServerController {
                 }finally {
                     lock.readLock().unlock();
                 }
+
+                try {
+                    TimeUnit.MILLISECONDS.sleep(1000-100);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+
+                //如果时间轮里已经处理完毕了，就阻塞，等待唤醒。避免空转
+                synchronized (obj) {
+                    if(timeRing.isEmpty()){
+                        try {
+                            log.info("时间轮任务已完成，阻塞等待");
+                            obj.wait();
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+
             }
         }
     }
@@ -694,7 +708,7 @@ public class NameServerController {
             }
     }
 
-    public static void main(String[] args) throws InterruptedException, ParseException, NoSuchMethodException, IllegalAccessException, InstantiationException, InvocationTargetException {
+//    public static void main(String[] args) throws InterruptedException, ParseException, NoSuchMethodException, IllegalAccessException, InstantiationException, InvocationTargetException {
 
 //        jobBean jobBean=new jobBean();
 //        jobBean.setCronExpr("10-30 * * 8-31 * ?");
@@ -741,7 +755,69 @@ public class NameServerController {
 
 
 
-    }
+//    }
 
+    public static void main(String[] args) {
+        temp temp = new temp();
+    }
+    static class temp{
+        final Object obj=new Object();
+        List<String>data=new ArrayList<>();
+        Thread t1,t2;
+        public temp(){
+            t1 = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    while (true){
+                        try {
+                            Thread.sleep(2000);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                        System.out.println("t1 run");
+                        data.add("ff");
+                        data.add("ff");
+                        synchronized (obj){
+                            System.out.println("t2.state:"+t2.getState());
+                            if(!data.isEmpty()&&t2.getState().equals(Thread.State.WAITING)){
+                                System.out.println("t1 size:"+data.size());
+                                obj.notify();
+                            }
+                        }
+                    }
+                }
+            });
+            t2 = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    while (true){
+                        try {
+                            Thread.sleep(1000);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                        System.out.println("t2 run");
+                        synchronized (obj) {
+                            if(data.isEmpty()){
+                                try {
+                                    System.out.println("t2 size:"+data.size());
+                                    obj.wait();
+                                } catch (InterruptedException e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                        }
+                        System.out.println("t2 run");
+                        data.remove(0);
+                    }
+                }
+            });
+            data.add("ff");
+            data.add("ff");
+            data.add("ff");
+            t1.start();
+            t2.start();
+        }
+    }
 }
 
