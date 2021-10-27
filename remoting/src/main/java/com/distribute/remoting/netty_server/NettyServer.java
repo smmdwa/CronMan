@@ -4,6 +4,7 @@ import com.distribute.remoting.Message.Message;
 import com.distribute.remoting.handler.*;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
+import io.netty.channel.nio.NioEventLoop;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
@@ -15,6 +16,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @Data
 @Slf4j
@@ -63,6 +68,8 @@ public class NettyServer {
             // 7.阻塞等待直到服务器Channel关闭(closeFuture()方法获取Channel 的CloseFuture对象,然后调用sync()方法)
             f.channel().closeFuture().sync();
             log.info("serverAddr:"+this.serverAddress+"closed!");
+//            NioEventLoop eventExecutors = new NioEventLoop();
+//            StringBuilder sb=new StringBuilder();
         } finally {
             //8.优雅关闭相关线程组资源
             bossGroup.shutdownGracefully();
