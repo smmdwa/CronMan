@@ -6,6 +6,7 @@ import com.distribute.remoting.mapper.JobMapper;
 import com.distribute.remoting.strategy.strategy;
 import com.distribute.remoting.strategy.strategyEnum;
 import com.distribute.remoting.thread.sendJobThread;
+import com.distribute.remoting.utils.DataUtil;
 import io.netty.channel.Channel;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -203,11 +204,26 @@ public class RouteInfoManager {
                 for(executorLiveInfo liveInfo:liveInfos){
                     Channel channel = liveInfo.getChannel();
                     int finalIndex = index;
-                    //丢给sendJob来完成任务
-                    sendJobThread.pushSendJob(new jobSendDetail(job.getJobId(),job,channel,finalIndex,total,job.getExecTimes()));
+                    byte[][]contents;
+                    boolean[]isCompresses;
+                    List<jobFinishDetail> details = getFatherContentsAndCompress(job.getPids(), job.getExecTimes() - 1);
+                    if(details!=null&&details.size()>0) {
+                        contents = new byte[details.size()][];
+                        isCompresses = new boolean[details.size()];
+                        int i = 0;
+                        for (jobFinishDetail detail : details) {
+                            contents[i] = detail.getContent();
+                            isCompresses[i] = detail.getIsCompress();
+                            i++;
+                        }
+                        //丢给sendJob来完成任务
+                        sendJobThread.pushSendJob(new jobSendDetail(job.getJobId(), job, channel, finalIndex, total, job.getExecTimes(), contents, isCompresses));
+                    }else{
+                        sendJobThread.pushSendJob(new jobSendDetail(job.getJobId(), job, channel, finalIndex, total, job.getExecTimes(), null, null));
+                    }
                     index++;
                     //记录进jobDetail
-                    jobFinishDetail detail = new jobFinishDetail(job.getJobId(), job.getExecTimes(), job, ResultEnum.init.result, getExecutorName(channel), finalIndex, total);
+                    jobFinishDetail detail = new jobFinishDetail(job.getJobId(), job.getExecTimes(), job, ResultEnum.init.result, getExecutorName(channel), finalIndex, total,null,null);
                     log.info("detail:"+detail);
                     mapper.insertJobDetail(detail);
                 }
@@ -222,6 +238,22 @@ public class RouteInfoManager {
         log.info("sendJobToExecutor:"+job.getJobId());
     }
 
+    //暂时只支持单个父亲任务的结果发送给子任务
+    private List<jobFinishDetail> getFatherContentsAndCompress(String pids, Integer execId){
+        if(execId<0)return null;
+        //获取父任务的结果
+        List<Long> list = DataUtil.transferLong(pids);
+        List<jobFinishDetail> jobDetail=null;
+        try {
+            dataLock.readLock().lockInterruptibly();
+            jobDetail = mapper.getJobDetail(list.get(0), execId);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }finally {
+            dataLock.readLock().unlock();
+        }
+        return jobDetail;
+    }
     //失效转移
     public void transferToExecutor(jobBean job,jobFinishDetail detail) {
         //如果job不允许失效转移，那就return
@@ -244,10 +276,24 @@ public class RouteInfoManager {
             //根据executorName获取要发送的executorLiveInfos
             executorLiveInfo info = this.executorLiveTable.get(sendList.get(0));
             log.info("transfer choose:"+info.getChannel());
-            //发送
-            sendJobThread.pushSendJob(new jobSendDetail(detail.getJobId(),job,info.getChannel(),detail.getShardIndex(),detail.getShardTotal(),detail.getExecId()));
-            //更新jobDetail 要修改execName
-            mapper.updateJobDetail(detail.getJobId(),detail.getExecId(),detail.getExecutorName(),ResultEnum.change.result,infos.get(0).getName());
+            byte[][]contents;
+            boolean[]isCompresses;
+            List<jobFinishDetail> details = getFatherContentsAndCompress(job.getPids(), job.getExecTimes() - 1);
+            if(details!=null&&details.size()>0) {
+                contents = new byte[details.size()][];
+                isCompresses = new boolean[details.size()];
+                int i = 0;
+                for (jobFinishDetail jobDetail : details) {
+                    contents[i] = jobDetail.getContent();
+                    isCompresses[i] = jobDetail.getIsCompress();
+                    i++;
+                }
+                sendJobThread.pushSendJob(new jobSendDetail(detail.getJobId(), job, info.getChannel(), detail.getShardIndex(), detail.getShardTotal(), detail.getExecId(),contents,isCompresses));
+            }else{
+                sendJobThread.pushSendJob(new jobSendDetail(detail.getJobId(), job, info.getChannel(), detail.getShardIndex(), detail.getShardTotal(), detail.getExecId(),null,null));
+            }
+                //更新jobDetail 要修改execName
+            mapper.updateJobDetail(detail.getJobId(),detail.getExecId(),detail.getExecutorName(),ResultEnum.change.result,infos.get(0).getName(),null,false);
 
         } catch (InterruptedException e) {
             e.printStackTrace();

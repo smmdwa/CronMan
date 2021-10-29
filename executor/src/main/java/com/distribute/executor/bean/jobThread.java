@@ -100,11 +100,14 @@ public class jobThread extends Thread {
                 log.error(e.getMessage());
             }finally {
                 if(execute==0)ok=false;
+                //todo try
+                byte[]tempContet="hello".getBytes();
+                boolean isCompress=false;
                 if(ok){
-                    Backer.pushCallBack(new CallBackMessage(this.executorName, ResultEnum.success.result,msg.getShardIndex(),msg.getShardTotal(),jobId,msg.getExecId()));
+                    Backer.pushCallBack(new CallBackMessage(this.executorName, ResultEnum.success.result,msg.getShardIndex(),msg.getShardTotal(),jobId,msg.getExecId(),tempContet,isCompress));
                 }else if(msg != null){
                     //todo 失败了 添加报警
-                    Backer.pushCallBack(new CallBackMessage(this.executorName,ResultEnum.error.result,msg.getShardIndex(),msg.getShardTotal(),jobId,msg.getExecId()));
+                    Backer.pushCallBack(new CallBackMessage(this.executorName,ResultEnum.error.result,msg.getShardIndex(),msg.getShardTotal(),jobId,msg.getExecId(),null,false));
                 }
             }
         }

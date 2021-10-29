@@ -57,6 +57,6 @@ public interface JobMapper {
 
     int insertJobDetail(jobFinishDetail job);
 
-    int updateJobDetail(long jobId,int execId,String executorName,int code,String newExecutorName);
+    int updateJobDetail(long jobId,int execId,String executorName,int code,String newExecutorName,byte[]content,boolean isCompress);
 
 }

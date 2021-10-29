@@ -607,11 +607,13 @@ public class NameServerController {
         Integer total = msg.getShardTotal();
         Integer code = msg.getCode();
         Integer execId=msg.getExecId();
+        byte[] content = msg.getContent();
+        boolean isCompress = msg.isCompress();
         log.info("handleCallBack code:"+code+" jobId:"+jobId);
         try {
             lock.writeLock().lockInterruptibly();
             //修改状态 不需要修改executor_name
-            mapper.updateJobDetail(jobId,execId,name,code,"");
+            mapper.updateJobDetail(jobId,execId,name,code,"",content,isCompress);
             if(code== ResultEnum.success.result){
                 //检查是否全部完成
                 if(isFinish(jobId,execId)){

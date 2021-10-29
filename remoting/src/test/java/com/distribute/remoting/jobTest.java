@@ -63,36 +63,36 @@ public class jobTest {
 
 //        List<String> execName = mapper.getExecName(11);
 //        System.out.println(execName);
-//
-//        List<jobFinishDetail> jobDetail = mapper.getJobDetail(11, 0);
-//        System.out.println(jobDetail);
-//
+
+        List<jobFinishDetail> jobDetail = mapper.getJobDetail(11, 0);
+        System.out.println(jobDetail);
+
 //        mapper.insertJobDetail(new jobFinishDetail(12L,0,jobBean,0,false,"executor_4",0,1));
-//
-////        mapper.updateJobDetail(11,0,200);
-//
+
+//        mapper.updateJobDetail(11,0,200);
+
 //        System.out.println(mapper.getJobDetail(11, 0));
 
     }
 
-    @Resource
-    DataSource dataSource;
-    @Test
-    public void contextLoads() throws SQLException {
-        Connection connection = dataSource.getConnection();
-        DatabaseMetaData metaData = connection.getMetaData();
-
-        //数据源>>>>>>class com.zaxxer.hikari.HikariDataSource
-        System.out.println("数据源>>>>>>" + dataSource.getClass());
-        System.out.println("连接>>>>>>>>" + connection);
-        System.out.println("连接地址>>>>" + connection.getMetaData().getURL());
-        System.out.println("驱动名称>>>>" + metaData.getDriverName());
-        System.out.println("驱动版本>>>>" + metaData.getDriverVersion());
-        System.out.println("数据库名称>>" + metaData.getDatabaseProductName());
-        System.out.println("数据库版本>>" + metaData.getDatabaseProductVersion());
-        System.out.println("连接用户名称>" + metaData.getUserName());
-
-        connection.close();
-    }
+//    @Resource
+//    DataSource dataSource;
+//    @Test
+//    public void contextLoads() throws SQLException {
+//        Connection connection = dataSource.getConnection();
+//        DatabaseMetaData metaData = connection.getMetaData();
+//
+//        //数据源>>>>>>class com.zaxxer.hikari.HikariDataSource
+//        System.out.println("数据源>>>>>>" + dataSource.getClass());
+//        System.out.println("连接>>>>>>>>" + connection);
+//        System.out.println("连接地址>>>>" + connection.getMetaData().getURL());
+//        System.out.println("驱动名称>>>>" + metaData.getDriverName());
+//        System.out.println("驱动版本>>>>" + metaData.getDriverVersion());
+//        System.out.println("数据库名称>>" + metaData.getDatabaseProductName());
+//        System.out.println("数据库版本>>" + metaData.getDatabaseProductVersion());
+//        System.out.println("连接用户名称>" + metaData.getUserName());
+//
+//        connection.close();
+//    }
 
 }

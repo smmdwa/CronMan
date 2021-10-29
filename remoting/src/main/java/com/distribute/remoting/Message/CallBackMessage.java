@@ -30,5 +30,7 @@ public class CallBackMessage extends Message{
     private Integer shardTotal;
     private Long jobId;
     private Integer execId;
+    private byte[] content;
+    private boolean isCompress;
 //    private Integer jobType; //todo 暂不支持多种类型的job
 }

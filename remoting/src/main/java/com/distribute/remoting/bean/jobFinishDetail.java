@@ -24,5 +24,9 @@ public class jobFinishDetail {
 
     private Integer shardTotal;
 
+    private byte[] content;//任务完成后的消息，父亲任务提供给子任务
+
+    private Boolean isCompress;//是否被压缩
+
 
 }

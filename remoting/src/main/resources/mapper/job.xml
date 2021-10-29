@@ -67,7 +67,9 @@
         `code`,
         `executor_name`,
         `shard_index`,
-        `shard_total`
+        `shard_total`,
+        `content`,
+        `is_compress`
     </sql>
 
     <select id="getJobById" parameterType="long" resultType="com.distribute.remoting.bean.jobBean">
@@ -233,15 +235,17 @@
         `code`,
         `executor_name`,
         `shard_index`,
-        `shard_total`
+        `shard_total`,
+        `content`,
+        `is_compress`
         ) values (
-        #{jobId},#{execId},#{code},#{executorName},#{shardIndex},#{shardTotal}
+        #{jobId},#{execId},#{code},#{executorName},#{shardIndex},#{shardTotal},#{content},#{isCompress}
         )
     </insert>
 
     <update id="updateJobDetail"  >
         UPDATE jobDetail
-        set code=#{code}
+        set code=#{code}, content=#{content}, is_compress=#{isCompress}
         <if test="newExecutorName != null and newExecutorName != ''">
              ,executor_name=#{newExecutorName}
         </if>

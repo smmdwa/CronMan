@@ -51,7 +51,7 @@ public class sendJobThread extends Thread{
                 NettyServer server= (NettyServer)Context.getBean(NettyServer.class);
                 // 发送msg
                 for(jobSendDetail message:callbackParamList){
-                    server.sendMessage(new SendJobMessage(message.getJob(), message.getIndex(),message.getTotal(),message.getExecId()),0,message.getChannel());
+                    server.sendMessage(new SendJobMessage(message.getJob(), message.getIndex(),message.getTotal(),message.getExecId(),msg.getContents(),msg.getIsCompresses()),0,message.getChannel());
                 }
                 log.info("sendJobThread success");
 

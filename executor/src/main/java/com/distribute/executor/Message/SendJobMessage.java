@@ -30,4 +30,7 @@ public class SendJobMessage extends Message{
 
     private Integer execId;
 
+    private byte[][] contents;
+
+    private boolean[] isCompresses;
 }

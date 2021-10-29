@@ -19,6 +19,8 @@ public class threadContext {
      */
     private final int shardTotal;
 
+    private String content;
+
     private static InheritableThreadLocal<threadContext> contextHolder = new InheritableThreadLocal<threadContext>(); // support for child thread of job handler)
 
     public threadContext(long jobId, int shardIndex, int shardTotal) {
