@@ -430,6 +430,8 @@ public class NameServerController {
                         //修改job 主要是修改nextStartTime来避免竞争
                         //修改jobTable 更改状态
                         for (jobBean job : jobList) {
+                            if(jobBean.java_passive.equals(job.getJobType())||jobBean.shell_passive.equals(job.getJobType()))
+                                continue;
                             job.setStatus(jobBean.doing);
                             mapper.update(job);
                         }
@@ -557,15 +559,6 @@ public class NameServerController {
             }
         });
     }
-
-
-
-
-    //todo 根据负载均衡策略 选择executor
-//    public String getExecutor(){
-//
-//        return "executor-1";
-//    }
 
     //返回下一次时间
     public static Long getNextStartTime(String cronExpr) {

@@ -216,6 +216,7 @@ public class RouteInfoManager {
                             isCompresses[i] = detail.getIsCompress();
                             i++;
                         }
+                        log.info("contents:{},isCompress:{}",contents,isCompresses);
                         //丢给sendJob来完成任务
                         sendJobThread.pushSendJob(new jobSendDetail(job.getJobId(), job, channel, finalIndex, total, job.getExecTimes(), contents, isCompresses));
                     }else{
@@ -243,6 +244,7 @@ public class RouteInfoManager {
         if(execId<0)return null;
         //获取父任务的结果
         List<Long> list = DataUtil.transferLong(pids);
+        if(list==null||list.size()==0)return null;
         List<jobFinishDetail> jobDetail=null;
         try {
             dataLock.readLock().lockInterruptibly();

@@ -10,6 +10,7 @@ import com.distribute.executor.utils.DataUtil;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -73,6 +74,9 @@ public class jobThread extends Thread {
                             return;
                         }
                     }
+                    if(msg.getContents()!=null){
+                        fillContent(msg.getContents(),msg.getIsCompresses());
+                    }
                     //初始化
                     this.handler.init();
 
@@ -113,7 +117,7 @@ public class jobThread extends Thread {
         }
     }
 
-    public boolean fillMethodProp(SendJobMessage msg){
+    private boolean fillMethodProp(SendJobMessage msg){
         jobBean job = msg.getJob();
         this.job=job;
 //        Invocation invocation = job.getInvocation();
@@ -166,7 +170,7 @@ public class jobThread extends Thread {
         return false;
     }
 
-    public boolean fillShellProp(SendJobMessage msg){
+    private boolean fillShellProp(SendJobMessage msg){
         jobBean job = msg.getJob();
         this.job=job;
 //        Invocation invocation = job.getInvocation();
@@ -200,8 +204,32 @@ public class jobThread extends Thread {
         }
         return shellValue;
     }
+
     public void stopJob(){
         this.stop=true;
         this.interrupt();
+    }
+
+    //填充content，用于传递给子任务
+    private void fillContent(byte[][]contents, boolean[] isCompress){
+        int i=0;
+        List<String>result=new ArrayList<>();
+        for(byte[]content:contents){
+            String temp=null;
+            if(isCompress[i]){
+                try {
+                    temp=new String(DataUtil.uncompress(content));
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }else{
+                temp=new String(content);
+            }
+            result.add(temp);
+            log.info("contentStr:{}",temp);
+            i++;
+        }
+        threadContext.getExecutorContext().setContent(result);
+        log.info("fillContent:{}",result);
     }
 }

@@ -3,6 +3,8 @@ package com.distribute.executor.bean;
 
 import lombok.Data;
 
+import java.util.List;
+
 //归线程所有，每个线程拥有的context不一样，因为是放在InheritableThreadLocal里面的
 //所以不需要单独放进jobThread里面
 @Data
@@ -19,7 +21,9 @@ public class threadContext {
      */
     private final int shardTotal;
 
-    private String content;
+    private List<String> content;
+
+    private String result;
 
     private static InheritableThreadLocal<threadContext> contextHolder = new InheritableThreadLocal<threadContext>(); // support for child thread of job handler)
 
