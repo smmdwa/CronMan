@@ -28,7 +28,7 @@ public class helloService  {
         log.info("content:{}",content);
         try {
             Thread.sleep(3000);
-            threadContext.getExecutorContext().setResult("job1-success");
+            threadContext.getExecutorContext().setResult("job"+shardIndex+"-success");
             log.info("任务结束 hello0==============");
         } catch (InterruptedException e) {
             e.printStackTrace();

@@ -141,16 +141,19 @@ public class NameServerController {
     //添加任务的入口，构造jobBean
     public returnMSG addJobController(String name,String pids,String className,String methodName,String paramType,String params,String cronExpr,Integer shardNum,boolean transfer,boolean reStart,String policy,String jobType,String shell){
         jobBean job;
+        long id = new idUtil().nextId();
+        //-1代表依赖任务是自己
+        if("-1".equals(pids)) pids=String.valueOf(id);
         //是否是主动任务
         if(jobBean.java_normal.equals(jobType)){
-            job = new jobBean(new idUtil().nextId(),pids,className,methodName,paramType,params,name,cronExpr,shardNum,transfer,reStart,policy,new Date(),new Date(),getNextStartTime(cronExpr),jobBean.init,0,jobType,jobBean.enabled,null);
+            job = new jobBean(id,pids,className,methodName,paramType,params,name,cronExpr,shardNum,transfer,reStart,policy,new Date(),new Date(),getNextStartTime(cronExpr),jobBean.init,0,jobType,jobBean.enabled,null);
         }else if(jobBean.shell_normal.equals(jobType)){
-            job = new jobBean(new idUtil().nextId(),pids,className,methodName,paramType,params,name,cronExpr,shardNum,transfer,reStart,policy,new Date(),new Date(),getNextStartTime(cronExpr),jobBean.init,0,jobType,jobBean.enabled,shell);
+            job = new jobBean(id,pids,className,methodName,paramType,params,name,cronExpr,shardNum,transfer,reStart,policy,new Date(),new Date(),getNextStartTime(cronExpr),jobBean.init,0,jobType,jobBean.enabled,shell);
         }else if(jobBean.java_passive.equals(jobType)){
-            job = new jobBean(new idUtil().nextId(),pids,className,methodName,paramType,params,name,cronExpr,shardNum,transfer,reStart,policy,new Date(),new Date(),0L,jobBean.waiting,0,jobType,jobBean.enabled,null);
+            job = new jobBean(id,pids,className,methodName,paramType,params,name,cronExpr,shardNum,transfer,reStart,policy,new Date(),new Date(),0L,jobBean.waiting,0,jobType,jobBean.enabled,null);
         }
         else{
-            job = new jobBean(new idUtil().nextId(),pids,className,methodName,paramType,params,name,cronExpr,shardNum,transfer,reStart,policy,new Date(),new Date(),0L,jobBean.waiting,0,jobType,jobBean.enabled,shell);
+            job = new jobBean(id,pids,className,methodName,paramType,params,name,cronExpr,shardNum,transfer,reStart,policy,new Date(),new Date(),0L,jobBean.waiting,0,jobType,jobBean.enabled,shell);
         }
         log.info("new job:"+job);
         try {
@@ -337,7 +340,7 @@ public class NameServerController {
     private int testTime=4;
 
     //dependNormalTime以内完成的上游任务都认为有效
-    private static final Long dependNormalTime=10* 60 *1000L;
+    private static final Long dependNormalTime=30* 60 *1000L;
 
     //判断上游任务是否全部完成
     private boolean isDependFinishNormal(String pids){

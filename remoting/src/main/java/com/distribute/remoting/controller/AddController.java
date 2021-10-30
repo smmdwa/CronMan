@@ -36,8 +36,8 @@ public class AddController {
         if(pids==null && (String.valueOf(map.get("jobType")).equals(jobBean.java_passive)||String.valueOf(map.get("jobType")).equals(jobBean.shell_passive))){
             msg="被动任务必须含有依赖任务！";
             code=300;
-        }else if(!controller.isExistTheJob(pids)){
-            //2.上游任务是否存在？
+        }else if(!controller.isExistTheJob(pids)||(jobs!=null&&jobs.size()==1&&jobs.get(0)==-1L)){
+            //2.上游任务是否存在？ 允许上游任务是自己,-1代表自己
             msg="依赖任务并不存在！";
             code=300;
         }
