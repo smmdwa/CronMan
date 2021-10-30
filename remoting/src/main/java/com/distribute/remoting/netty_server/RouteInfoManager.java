@@ -220,6 +220,7 @@ public class RouteInfoManager {
                         //丢给sendJob来完成任务
                         sendJobThread.pushSendJob(new jobSendDetail(job.getJobId(), job, channel, finalIndex, total, job.getExecTimes(), contents, isCompresses));
                     }else{
+                        log.info("contents is null");
                         sendJobThread.pushSendJob(new jobSendDetail(job.getJobId(), job, channel, finalIndex, total, job.getExecTimes(), null, null));
                     }
                     index++;

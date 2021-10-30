@@ -506,7 +506,6 @@ public class NameServerController {
                         ringItemData.addAll(tmpData);
                     }
                 }
-
                 try {
                     lock.readLock().lockInterruptibly();
                     if (ringItemData.size() > 0) {
