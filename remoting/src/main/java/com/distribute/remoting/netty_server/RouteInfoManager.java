@@ -35,8 +35,8 @@ public class RouteInfoManager {
     private final ReadWriteLock dataLock = new ReentrantReadWriteLock();
 
     private final HashMap<String, executorInfo> executorAddrTable;
+
     private final HashMap<String, executorLiveInfo> executorLiveTable;
-//    private final ConcurrentHashMap<Long, List<jobFinishDetail>>jobFinishTable;//任务完成情况表 jobId对应不同的detail
 
     private volatile static RouteInfoManager instance;
 
@@ -44,17 +44,6 @@ public class RouteInfoManager {
 
     @Autowired
     JobMapper mapper;
-//    //todo 顺序问题？
-//    public static routeInfoManager getInstance() {
-//        if (instance == null) {
-//            synchronized (routeInfoManager.class) {
-//                if (instance == null) {
-//                    instance = new routeInfoManager();
-//                }
-//            }
-//        }
-//        return instance;
-//    }
 
     public RouteInfoManager() {
         this.executorAddrTable = new HashMap<String, executorInfo>(128);
@@ -79,9 +68,6 @@ public class RouteInfoManager {
         }finally {
             this.executorLock.writeLock().unlock();
         }
-        log.info("routeInfoManager ===== registerExecutor end");
-        log.info("table:"+this.executorAddrTable);
-        log.info("aliveTable:"+this.executorLiveTable);
         return true;
     }
 
@@ -97,9 +83,6 @@ public class RouteInfoManager {
         }finally {
             this.executorLock.writeLock().unlock();
         }
-//        log.info("routeInfoManager ===== updateActiveExecutor end");
-        log.info("table:"+this.executorAddrTable);
-//        log.info("aliveTable:"+this.executorLiveTable);
         return true;
     }
 
@@ -131,9 +114,7 @@ public class RouteInfoManager {
                 }
 
             }
-//            log.info("routeInfoManager ====== scanNotActiveBroker end");
             log.info("table:"+this.executorAddrTable);
-//            log.info("aliveTable:"+this.executorLiveTable);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }finally {

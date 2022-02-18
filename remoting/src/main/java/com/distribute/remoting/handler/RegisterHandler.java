@@ -18,7 +18,6 @@ public class RegisterHandler extends SimpleChannelInboundHandler<RegisterInMessa
         String addr = msg.getAddr();
         Integer level=msg.getLevel();
 
-        log.info("register name:"+name+" addr:"+addr+" level:"+level+" channel:"+channelHandlerContext.channel());
         RouteInfoManager manager = (RouteInfoManager) Context.getBean(RouteInfoManager.class);
         NameServerController controller =(NameServerController)Context.getBean("nameServerController");
 

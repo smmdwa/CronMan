@@ -26,7 +26,7 @@ public class MessageCodecSharable extends MessageToMessageCodec<ByteBuf, Message
         else
             out.writeLong(0);
 
-//        byte[] bytes = new JavaSerializer().serialize(message);
+        //   todo json序列化算法
         byte[] bytes = Serializer.Algorithm.Json.serialize(message);
 
         // 5. msg长度

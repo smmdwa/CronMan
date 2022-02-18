@@ -18,9 +18,7 @@ public class PingHandler extends SimpleChannelInboundHandler<PingMessage> {
         RouteInfoManager manager = (RouteInfoManager) Context.getBean(RouteInfoManager.class);
         NameServerController controller =(NameServerController)Context.getBean("nameServerController");
         boolean result = manager.updateActiveExecutor(name);
-        if(!result){
-            log.info("RegisterHandler === 出错 msg:{}",pingMessage);
-        }else{
+        if(result){
             //返回response消息
             ResponseMessage responseMessage = new ResponseMessage(pingMessage.getRequestId(), Message.success, "pinged");
             controller.sendResponse(responseMessage, channelHandlerContext.channel());
