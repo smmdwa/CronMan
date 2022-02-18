@@ -11,10 +11,11 @@ import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.ReentrantLock;
 
 @Slf4j
 @Data
@@ -246,4 +247,5 @@ public class jobThread extends Thread {
         threadContext.getExecutorContext().setContent(result);
         log.info("fillContent:{}",result);
     }
+
 }

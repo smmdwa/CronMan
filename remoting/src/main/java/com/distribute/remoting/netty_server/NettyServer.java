@@ -31,13 +31,12 @@ public class NettyServer {
 
     private Integer port= 8099;
 
-    // 1.bossGroup 用于接收连接，workerGroup 用于具体的处理
-    private final EventLoopGroup bossGroup= new NioEventLoopGroup(1);;
+    private final EventLoopGroup bossGroup= new NioEventLoopGroup(1);
+
     private final EventLoopGroup workerGroup =new NioEventLoopGroup();
 
     private final EventLoopGroup sendGroup=new DefaultEventLoopGroup();
 
-//    @PostConstruct
     public  void start() throws InterruptedException {
         try {
             //2.创建服务端启动引导/辅助类：ServerBootstrap
@@ -89,7 +88,7 @@ public class NettyServer {
                 public void operationComplete(ChannelFuture future) throws Exception {
                     //写操作完成，并没有错误发生
                     if (future.isSuccess()){
-                        log.info("send msg successful:"+msg+" id:"+msg.getRequestId());
+//                        log.info("send msg successful:"+msg+" id:"+msg.getRequestId());
                     }else{
                         //记录错误
                         log.info("send msg error! time:"+time+" msg:"+msg);

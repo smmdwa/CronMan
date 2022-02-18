@@ -66,7 +66,7 @@ public class NameServerController {
     //用来控制toBeRingThread的唤醒和睡眠
     private final Object obj=new Object();
 
-//    private final  ConcurrentHashMap<Long, jobExecInfo> jobTable=new ConcurrentHashMap<>(128);
+    private final  ConcurrentHashMap<Long, jobExecInfo> jobTable=new ConcurrentHashMap<>(128);
 
     private ThreadPoolExecutor sendExecutor;
 
@@ -340,7 +340,7 @@ public class NameServerController {
     private int testTime=4;
 
     //dependNormalTime以内完成的上游任务都认为有效
-    private static final Long dependNormalTime=30* 60 *1000L;
+    private static final Long dependNormalTime=20* 60 *1000L;
 
     //判断上游任务是否全部完成
     private boolean isDependFinishNormal(String pids){
@@ -498,7 +498,6 @@ public class NameServerController {
         @Override
         public void run() {
             while (true){
-                log.info("时间轮任务开始===");
                 // item放着jobId
                 List<Long> ringItemData = new ArrayList<>();
                 //获取当前时刻的秒数，1秒，2秒
@@ -513,7 +512,6 @@ public class NameServerController {
                     lock.readLock().lockInterruptibly();
                     if (ringItemData.size() > 0) {
                         // 需要发送
-                        log.info("job need to send");
                         for (Long jobId : ringItemData) {
                             sendJobToExecutor(mapper.getJobById(jobId));
                         }
@@ -622,7 +620,6 @@ public class NameServerController {
                     //检查是否有依赖任务可以发送
                     dependFinish();
                     //todo 全部完成 通知并记录，删除此jobId
-                    log.info("jobId:"+jobId+" total finish!");
                 }
             }else if(code==ResultEnum.error.result){
                 log.info("jobId:"+jobId+" error!");
@@ -646,7 +643,6 @@ public class NameServerController {
             if(details==null)return false;
             for (jobFinishDetail detail : details) {
                 if(detail.getCode()!=ResultEnum.success.result){
-                    log.info("isFinish:{} false!",jobId);
                     return false;
                 }
             }
