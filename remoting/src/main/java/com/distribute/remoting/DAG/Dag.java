@@ -22,16 +22,6 @@ public class Dag {
             this.node = node;
         }
     }
-
-    @Data
-    private static class AdjacencyType {
-        int from = -1;// 弧的起点在顶点数组中的下标
-        int to = -1;// 弧终点在顶点数组中的下标
-        AdjacencyType headLink = null;// 指向下一个终点相同的邻接点
-        AdjacencyType adjLink = null;// 指向下一个起点相同的邻接点
-
-    }
-
     // 顶点数组赋值
     public Dag(List<NodeDAG> nodes) {
         this.mavVex = nodes.size();
@@ -49,6 +39,15 @@ public class Dag {
     }
 
     HashSet<Integer> result;
+
+    @Data
+    private static class AdjacencyType {
+        int from = -1;// 弧的起点在顶点数组中的下标
+        int to = -1;// 弧终点在顶点数组中的下标
+        AdjacencyType headLink = null;// 指向下一个终点相同的邻接点
+        AdjacencyType adjLink = null;// 指向下一个起点相同的邻接点
+
+    }
 
     public HashSet<NodeDAG> transferToNodeDag() {
         HashSet<NodeDAG> res = new HashSet<>();
