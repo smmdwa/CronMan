@@ -38,8 +38,6 @@ import java.util.concurrent.*;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-@AllArgsConstructor
-@NoArgsConstructor
 @Data
 @Slf4j
 @Component
@@ -73,7 +71,10 @@ public class NameServerController {
     private ThreadPoolExecutor callBackExecutor;
 
     private final ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor(new ThreadFactoryImpl(
-            "schedule-Thread"));
+            "Scan_Executor_Thread"));
+
+    private final ScheduledExecutorService scheduledLookingFailedTask = Executors.newSingleThreadScheduledExecutor(new ThreadFactoryImpl(
+            "Scan_FailedTask_Thread"));
 
     private final int nthreads= 5;
 
@@ -84,6 +85,9 @@ public class NameServerController {
     private toBeRunJobThread toBeRunJobThread;
 
     private toBeRingThread toBeRingThread;
+
+
+
     @PostConstruct
     public void initialize() {
         this.lock=routemanager.getDataLock();
@@ -98,8 +102,6 @@ public class NameServerController {
                 }
             }
         }).start();
-        log.info("scan:"+this.scheduledExecutorService+" ff"+this.routemanager);
-        log.info("datas:"+dataSource);
         //定时扫描活跃节点
         this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
             @Override
@@ -108,6 +110,13 @@ public class NameServerController {
             }
         }, 5, 10 , TimeUnit.SECONDS);
 
+        //定时扫描失败的任务：从运行开始，超过一定时间仍未完成则判定为任务失败
+        this.scheduledLookingFailedTask.scheduleWithFixedDelay(new Runnable() {
+            @Override
+            public void run() {
+                Scheduled.ScheduleLookingFailedTask();
+            }
+        },Const.QueryFirstDelay,Const.QueryInterval,TimeUnit.HOURS);
 
         //专门用来发送sendJobMessage给 executor
         sendExecutor=new ThreadPoolExecutor(2,5,60,TimeUnit.SECONDS,new ArrayBlockingQueue<>(100));
