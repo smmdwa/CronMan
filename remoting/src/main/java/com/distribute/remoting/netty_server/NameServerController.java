@@ -57,7 +57,6 @@ public class NameServerController {
     @Autowired
     RouteInfoManager routemanager;
 //    private final routeInfoManager routemanager=routeInfoManager.getInstance();
-
     @Autowired
     NettyServer server;
 
