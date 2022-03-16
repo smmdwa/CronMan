@@ -7,7 +7,7 @@ import lombok.Data;
 
 @Data
 @AllArgsConstructor
-public class executorLiveInfo {
+public class ExecutorLiveInfo {
     private long lastUpdateTimestamp;
 //    private DataVersion dataVersion;
     private Channel channel;

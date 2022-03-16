@@ -3,7 +3,7 @@ package com.distribute.remoting.netty_server;
 
 import com.distribute.remoting.bean.*;
 import com.distribute.remoting.mapper.JobMapper;
-import com.distribute.remoting.strategy.strategy;
+import com.distribute.remoting.strategy.Strategy;
 import com.distribute.remoting.strategy.strategyEnum;
 import com.distribute.remoting.thread.sendJobThread;
 import com.distribute.remoting.utils.DataUtil;
@@ -34,20 +34,20 @@ public class RouteInfoManager {
 
     private final ReadWriteLock dataLock = new ReentrantReadWriteLock();
 
-    private final HashMap<String, executorInfo> executorAddrTable;
+    private final HashMap<String, ExecutorInfo> executorAddrTable;
 
-    private final HashMap<String, executorLiveInfo> executorLiveTable;
+    private final HashMap<String, ExecutorLiveInfo> executorLiveTable;
 
     private volatile static RouteInfoManager instance;
 
-    private LinkedBlockingQueue<jobFinishDetail> jobToBeTransferQueue;
+    private LinkedBlockingQueue<JobFinishDetail> jobToBeTransferQueue;
 
     @Autowired
     JobMapper mapper;
 
     public RouteInfoManager() {
-        this.executorAddrTable = new HashMap<String, executorInfo>(128);
-        this.executorLiveTable = new HashMap<String, executorLiveInfo>(128);
+        this.executorAddrTable = new HashMap<String, ExecutorInfo>(128);
+        this.executorLiveTable = new HashMap<String, ExecutorLiveInfo>(128);
         this.jobToBeTransferQueue=new LinkedBlockingQueue<>();
     }
 
@@ -57,8 +57,8 @@ public class RouteInfoManager {
         try {
             this.executorLock.writeLock().lockInterruptibly();
 
-            executorInfo executorInfo = new executorInfo(name,addr,0,level);
-            executorLiveInfo executorLiveInfo = new executorLiveInfo(System.currentTimeMillis(), channel, addr);
+            ExecutorInfo executorInfo = new ExecutorInfo(name,addr,0,level);
+            ExecutorLiveInfo executorLiveInfo = new ExecutorLiveInfo(System.currentTimeMillis(), channel, addr);
 
             this.executorAddrTable.put(name,executorInfo);
             this.executorLiveTable.put(name,executorLiveInfo);
@@ -94,7 +94,7 @@ public class RouteInfoManager {
     public void scanNotActiveExecutor() {
         try {
             this.executorLock.readLock().lockInterruptibly();
-            for (Map.Entry<String, executorLiveInfo> next : this.executorLiveTable.entrySet()) {
+            for (Map.Entry<String, ExecutorLiveInfo> next : this.executorLiveTable.entrySet()) {
                 long last = next.getValue().getLastUpdateTimestamp();
                 //本地 brokerLiveTable 默认2分钟过期
                 //todo  System.currentTimeMillis()   不同executor  可能存在误差？
@@ -126,7 +126,7 @@ public class RouteInfoManager {
     public String getExecutorName(Channel channel){
         try {
             this.executorLock.readLock().lockInterruptibly();
-            for (Map.Entry<String, executorLiveInfo> infos : this.executorLiveTable.entrySet()) {
+            for (Map.Entry<String, ExecutorLiveInfo> infos : this.executorLiveTable.entrySet()) {
                 if(infos.getValue().getChannel()==channel){
                     return infos.getKey();
                 }
@@ -152,14 +152,14 @@ public class RouteInfoManager {
     }
 
         //从table中 选择一个可用的executor 拿到channel 发送SendJobMessage
-    public void sendJobToExecutor(jobBean job){
+    public void sendJobToExecutor(JobBean job){
         try {
             this.executorLock.readLock().lockInterruptibly();
             log.info("sendJob:"+job);
             Integer shardParam=job.getShardNum();
-            strategy strategy = strategyEnum.match(job.getPolicy()).getStrategy();
+            Strategy strategy = strategyEnum.match(job.getPolicy()).getStrategy();
             //获取所有的executorInfo
-            List<executorInfo> infos = new ArrayList<>(this.executorAddrTable.values());
+            List<ExecutorInfo> infos = new ArrayList<>(this.executorAddrTable.values());
             //根据策略获取可用的executorName
             List<String> sendList=strategy.route(infos,shardParam);
             if(sendList==null||sendList.size()==0){
@@ -169,9 +169,9 @@ public class RouteInfoManager {
                 return;
             }
             //根据executorName获取要发送的executorLiveInfos
-            List<executorLiveInfo> liveInfos=new ArrayList<>();
+            List<ExecutorLiveInfo> liveInfos=new ArrayList<>();
             for(String sendExecutor:sendList){
-                executorLiveInfo liveInfo = this.executorLiveTable.get(sendExecutor);
+                ExecutorLiveInfo liveInfo = this.executorLiveTable.get(sendExecutor);
                 if(liveInfo!=null){
                     liveInfos.add(liveInfo);
                 }
@@ -182,31 +182,31 @@ public class RouteInfoManager {
             //再上一把锁 锁住的是竞争修改表的
             try {
                 this.dataLock.writeLock().lockInterruptibly();
-                for(executorLiveInfo liveInfo:liveInfos){
+                for(ExecutorLiveInfo liveInfo:liveInfos){
                     Channel channel = liveInfo.getChannel();
                     int finalIndex = index;
                     byte[][]contents;
                     boolean[]isCompresses;
-                    List<jobFinishDetail> details = getFatherContentsAndCompress(job.getPids(), job.getExecTimes() - 1);
+                    List<JobFinishDetail> details = getFatherContentsAndCompress(job.getPids(), job.getExecTimes() - 1);
                     if(details!=null&&details.size()>0) {
                         contents = new byte[details.size()][];
                         isCompresses = new boolean[details.size()];
                         int i = 0;
-                        for (jobFinishDetail detail : details) {
+                        for (JobFinishDetail detail : details) {
                             contents[i] = detail.getContent();
                             isCompresses[i] = detail.getIsCompress();
                             i++;
                         }
                         log.info("contents:{},isCompress:{}",contents,isCompresses);
                         //丢给sendJob来完成任务
-                        sendJobThread.pushSendJob(new jobSendDetail(job.getJobId(), job, channel, finalIndex, total, job.getExecTimes(), contents, isCompresses));
+                        sendJobThread.pushSendJob(new JobSendDetail(job.getJobId(), job, channel, finalIndex, total, job.getExecTimes(), contents, isCompresses));
                     }else{
                         log.info("contents is null");
-                        sendJobThread.pushSendJob(new jobSendDetail(job.getJobId(), job, channel, finalIndex, total, job.getExecTimes(), null, null));
+                        sendJobThread.pushSendJob(new JobSendDetail(job.getJobId(), job, channel, finalIndex, total, job.getExecTimes(), null, null));
                     }
                     index++;
                     //记录进jobDetail
-                    jobFinishDetail detail = new jobFinishDetail(job.getJobId(), job.getExecTimes(), job, ResultEnum.init.result, getExecutorName(channel), finalIndex, total,null,null);
+                    JobFinishDetail detail = new JobFinishDetail(job.getJobId(), job.getExecTimes(), job, ResultEnum.init.result, getExecutorName(channel), finalIndex, total,null,null);
                     log.info("detail:"+detail);
                     mapper.insertJobDetail(detail);
                 }
@@ -222,12 +222,12 @@ public class RouteInfoManager {
     }
 
     //暂时只支持单个父亲任务的结果发送给子任务
-    private List<jobFinishDetail> getFatherContentsAndCompress(String pids, Integer execId){
+    private List<JobFinishDetail> getFatherContentsAndCompress(String pids, Integer execId){
         if(execId<0)return null;
         //获取父任务的结果
         List<Long> list = DataUtil.transferLong(pids);
         if(list==null||list.size()==0)return null;
-        List<jobFinishDetail> jobDetail=null;
+        List<JobFinishDetail> jobDetail=null;
         try {
             dataLock.readLock().lockInterruptibly();
             jobDetail = mapper.getJobDetail(list.get(0), execId);
@@ -239,15 +239,15 @@ public class RouteInfoManager {
         return jobDetail;
     }
     //失效转移
-    public void transferToExecutor(jobBean job,jobFinishDetail detail) {
+    public void transferToExecutor(JobBean job, JobFinishDetail detail) {
         //如果job不允许失效转移，那就return
         if(!job.isTransfer())return;
         //读executortable 需要上锁
         try {
             executorLock.readLock().lockInterruptibly();
-            strategy strategy = strategyEnum.match("random").getStrategy();
+            Strategy strategy = strategyEnum.match("random").getStrategy();
             //获取所有的executorInfo
-            List<executorInfo> infos = new ArrayList<>(this.executorAddrTable.values());
+            List<ExecutorInfo> infos = new ArrayList<>(this.executorAddrTable.values());
             //todo 如果全都挂掉了怎么办？  初步方案，后续添加 扫描线程，监控jobtable，遇到code400 再次调用本函数
             //根据策略获取可用的executorName
             List<String> sendList=strategy.route(infos,1);
@@ -258,23 +258,23 @@ public class RouteInfoManager {
                 return;
             }
             //根据executorName获取要发送的executorLiveInfos
-            executorLiveInfo info = this.executorLiveTable.get(sendList.get(0));
+            ExecutorLiveInfo info = this.executorLiveTable.get(sendList.get(0));
             log.info("transfer choose:"+info.getChannel());
             byte[][]contents;
             boolean[]isCompresses;
-            List<jobFinishDetail> details = getFatherContentsAndCompress(job.getPids(), job.getExecTimes() - 1);
+            List<JobFinishDetail> details = getFatherContentsAndCompress(job.getPids(), job.getExecTimes() - 1);
             if(details!=null&&details.size()>0) {
                 contents = new byte[details.size()][];
                 isCompresses = new boolean[details.size()];
                 int i = 0;
-                for (jobFinishDetail jobDetail : details) {
+                for (JobFinishDetail jobDetail : details) {
                     contents[i] = jobDetail.getContent();
                     isCompresses[i] = jobDetail.getIsCompress();
                     i++;
                 }
-                sendJobThread.pushSendJob(new jobSendDetail(detail.getJobId(), job, info.getChannel(), detail.getShardIndex(), detail.getShardTotal(), detail.getExecId(),contents,isCompresses));
+                sendJobThread.pushSendJob(new JobSendDetail(detail.getJobId(), job, info.getChannel(), detail.getShardIndex(), detail.getShardTotal(), detail.getExecId(),contents,isCompresses));
             }else{
-                sendJobThread.pushSendJob(new jobSendDetail(detail.getJobId(), job, info.getChannel(), detail.getShardIndex(), detail.getShardTotal(), detail.getExecId(),null,null));
+                sendJobThread.pushSendJob(new JobSendDetail(detail.getJobId(), job, info.getChannel(), detail.getShardIndex(), detail.getShardTotal(), detail.getExecId(),null,null));
             }
                 //更新jobDetail 要修改execName
             mapper.updateJobDetail(detail.getJobId(),detail.getExecId(),detail.getExecutorName(),ResultEnum.change.result,infos.get(0).getName(),null,false);
@@ -303,8 +303,8 @@ public class RouteInfoManager {
 
             preparedStatement.execute();
 
-            List<jobFinishDetail> notExecJobs = mapper.getNotExecJobs(name);
-            for(jobFinishDetail detail:notExecJobs){
+            List<JobFinishDetail> notExecJobs = mapper.getNotExecJobs(name);
+            for(JobFinishDetail detail:notExecJobs){
                 if (detail.getExecutorName().equals(name) && detail.getCode() == ResultEnum.init.result) {
                     // 修改code
 //                    mapper.updateJobDetail(detail.getJobId(),detail.getExecId(),ResultEnum.change.result);
@@ -382,13 +382,13 @@ public class RouteInfoManager {
 
 
     //根据jobId获取所有关联的executor路由信息
-    public List<executorLiveInfo> getAllExecutorInfo(Long jobId) {
+    public List<ExecutorLiveInfo> getAllExecutorInfo(Long jobId) {
         List<String> execName = mapper.getExecName(jobId);
-        List<executorLiveInfo> infos =new ArrayList<>();
+        List<ExecutorLiveInfo> infos =new ArrayList<>();
         try {
             this.executorLock.readLock().lockInterruptibly();
             for (String name : execName) {
-                executorLiveInfo info = this.executorLiveTable.get(name);
+                ExecutorLiveInfo info = this.executorLiveTable.get(name);
                 if(info!=null)
                     infos.add(info);
             }

@@ -1,31 +1,28 @@
 package com.distribute.remoting.strategy;
 
-import com.distribute.remoting.bean.executorInfo;
+import com.distribute.remoting.bean.ExecutorInfo;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.locks.ReentrantLock;
 
 //最近最少使用的执行器，优先被调用
-public class lruStrategy extends strategy{
+public class lruStrategy extends Strategy {
     private static LRUCache lruCache=new LRUCache();
 
     @Override
-    public List<String> route(List<executorInfo> infos, Integer shardParam) {
+    public List<String> route(List<ExecutorInfo> infos, Integer shardParam) {
         if(infos==null||infos.size()<shardParam)return null;
 
         // put new
-        for (executorInfo info: infos) {
+        for (ExecutorInfo info: infos) {
             if (!lruCache.contains(info)) {
                 lruCache.put(info);
             }
         }
         // remove old
-        List<executorInfo> all = lruCache.getAll();
-        for (executorInfo info : all) {
+        List<ExecutorInfo> all = lruCache.getAll();
+        for (ExecutorInfo info : all) {
             boolean exist=false;
-            for (executorInfo nowInfo : infos) {
+            for (ExecutorInfo nowInfo : infos) {
                 if(nowInfo.getName().equals(info.getName())){
                     exist=true;
                 }
@@ -37,7 +34,7 @@ public class lruStrategy extends strategy{
         List<String>res=new ArrayList<>();
         int num=0;
         while (num<shardParam){
-            executorInfo executorInfo = lruCache.get();
+            ExecutorInfo executorInfo = lruCache.get();
             res.add(executorInfo.getName());
             num++;
         }
@@ -47,11 +44,11 @@ public class lruStrategy extends strategy{
 }
  class LRUCache {
     class DLinkedNode {
-        executorInfo value;
+        ExecutorInfo value;
         DLinkedNode prev;
         DLinkedNode next;
         public DLinkedNode() {}
-        public DLinkedNode(executorInfo _value) { value = _value;}
+        public DLinkedNode(ExecutorInfo _value) { value = _value;}
     }
 
     private DLinkedNode head, tail;
@@ -65,18 +62,18 @@ public class lruStrategy extends strategy{
     }
 
     //获取最后一个节点，再把它移到头部
-    public executorInfo get() {
+    public ExecutorInfo get() {
         DLinkedNode tail = getTail();
         moveToHead(tail);
         return tail.value;
     }
 
-    public void put(executorInfo value) {
+    public void put(ExecutorInfo value) {
         DLinkedNode newNode = new DLinkedNode(value);
         addToHead(newNode);
     }
 
-    public boolean contains(executorInfo value){
+    public boolean contains(ExecutorInfo value){
         DLinkedNode headNode=head.next;
         while (headNode!=tail){
             if(headNode.value.getName().equals(value.getName())){
@@ -87,8 +84,8 @@ public class lruStrategy extends strategy{
         return false;
     }
 
-    public List<executorInfo> getAll(){
-        List<executorInfo> list=new ArrayList<>();
+    public List<ExecutorInfo> getAll(){
+        List<ExecutorInfo> list=new ArrayList<>();
         DLinkedNode headNode=head.next;
         while (headNode!=tail){
             list.add(headNode.value);
@@ -97,7 +94,7 @@ public class lruStrategy extends strategy{
         return list;
     }
 
-     public void remove(executorInfo value) {
+     public void remove(ExecutorInfo value) {
          DLinkedNode headNode=head.next;
          while (headNode!=tail){
              if(headNode.value.equals(value)){
@@ -139,12 +136,12 @@ public class lruStrategy extends strategy{
 
      public static void main(String[] args) {
          lruStrategy lruStrategy = new lruStrategy();
-         List<executorInfo>infoList=new ArrayList<>();
-         infoList.add(new executorInfo("1","",1,1));
-         infoList.add(new executorInfo("2","",1,1));
-         infoList.add(new executorInfo("3","",1,1));
-         infoList.add(new executorInfo("4","",1,1));
-         infoList.add(new executorInfo("5","",1,1));
+         List<ExecutorInfo>infoList=new ArrayList<>();
+         infoList.add(new ExecutorInfo("1","",1,1));
+         infoList.add(new ExecutorInfo("2","",1,1));
+         infoList.add(new ExecutorInfo("3","",1,1));
+         infoList.add(new ExecutorInfo("4","",1,1));
+         infoList.add(new ExecutorInfo("5","",1,1));
 
          List<String> route = lruStrategy.route(infoList, 3);
          System.out.println(route);

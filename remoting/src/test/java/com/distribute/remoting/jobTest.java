@@ -1,22 +1,12 @@
 package com.distribute.remoting;
 
-import com.distribute.remoting.bean.ResultEnum;
-import com.distribute.remoting.bean.jobBean;
-import com.distribute.remoting.bean.jobExecInfo;
-import com.distribute.remoting.bean.jobFinishDetail;
+import com.distribute.remoting.bean.JobFinishDetail;
 import com.distribute.remoting.mapper.JobMapper;
 import org.junit.jupiter.api.Test;
-import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
 
-import javax.sql.DataSource;
-import javax.annotation.Resource;
-import java.sql.Connection;
-import java.sql.DatabaseMetaData;
-import java.sql.SQLException;
-import java.util.Date;
 import java.util.List;
 
 //@MapperScan("com.distribute.remoting.mapper")
@@ -64,7 +54,7 @@ public class jobTest {
 //        List<String> execName = mapper.getExecName(11);
 //        System.out.println(execName);
 
-        List<jobFinishDetail> jobDetail = mapper.getJobDetail(11, 0);
+        List<JobFinishDetail> jobDetail = mapper.getJobDetail(11, 0);
         System.out.println(jobDetail);
 
 //        mapper.insertJobDetail(new jobFinishDetail(12L,0,jobBean,0,false,"executor_4",0,1));

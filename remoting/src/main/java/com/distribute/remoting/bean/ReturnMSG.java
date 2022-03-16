@@ -7,7 +7,7 @@ import java.util.List;
 
 @Data
 @AllArgsConstructor
-public class returnMSG<T> {
+public class ReturnMSG<T> {
     private int code;
     private String msg;
     private T data;

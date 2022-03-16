@@ -2,7 +2,7 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
 <mapper namespace="com.distribute.remoting.mapper.JobMapper">
-    <resultMap id="job" type="com.distribute.remoting.bean.jobBean" >
+    <resultMap id="job" type="com.distribute.remoting.bean.JobBean" >
         <result column="job_id" property="jobId" />
         <result column="name" property="name" />
         <result column="pids" property="pids" />
@@ -26,7 +26,7 @@
 
     </resultMap>
 
-    <resultMap id="jobTable" type="com.distribute.remoting.bean.jobExecInfo">
+    <resultMap id="jobTable" type="com.distribute.remoting.bean.JobExecInfo">
         <result column="job_id" property="jobId" />
         <result column="name" property="name" />
         <result column="status" property="status" />
@@ -72,15 +72,15 @@
         `is_compress`
     </sql>
 
-    <select id="getJobById" parameterType="long" resultType="com.distribute.remoting.bean.jobBean">
+    <select id="getJobById" parameterType="long" resultType="com.distribute.remoting.bean.JobBean">
         select <include refid="Base_Column_List" /> from `job` where job_id = #{jobId} and enable= 1
     </select>
 
-    <select id="getAllJob"  resultType="com.distribute.remoting.bean.jobBean">
+    <select id="getAllJob"  resultType="com.distribute.remoting.bean.JobBean">
         select <include refid="Base_Column_List" /> from `job` where enable= 1
     </select>
 
-    <update id="update" parameterType="com.distribute.remoting.bean.jobBean" >
+    <update id="update" parameterType="com.distribute.remoting.bean.JobBean" >
 		UPDATE job
 		SET
 			`name` = #{name},
@@ -192,7 +192,7 @@
         )
     </insert>
 
-    <update id="updateJobInfoByStatusAndTimes" parameterType="com.distribute.remoting.bean.jobExecInfo" >
+    <update id="updateJobInfoByStatusAndTimes" parameterType="com.distribute.remoting.bean.JobExecInfo" >
 		UPDATE jobTable
         <trim prefix="set" suffixOverrides=",">
         <if test="exec_times != -1">exec_times=exec_times+1,</if>
@@ -201,7 +201,7 @@
 		WHERE job_id = #{jobId}
 	</update>
 
-    <select id="getJobInfoById" resultType="com.distribute.remoting.bean.jobExecInfo">
+    <select id="getJobInfoById" resultType="com.distribute.remoting.bean.JobExecInfo">
         select <include refid="Base_JobInfo_List" />
          from `jobTable` where job_id = #{id}
     </select>
@@ -211,7 +211,7 @@
 
 
 
-    <select id="getNotExecJobs" resultType="com.distribute.remoting.bean.jobFinishDetail">
+    <select id="getNotExecJobs" resultType="com.distribute.remoting.bean.JobFinishDetail">
         select <include refid="Base_JobDetail_List" />
         from `jobDetail` where executor_name = #{name}
     </select>
@@ -223,7 +223,7 @@
         where jobDetail.job_id = #{jobId} and code = 0
     </select>
 
-    <select id="getJobDetail" resultType="com.distribute.remoting.bean.jobFinishDetail">
+    <select id="getJobDetail" resultType="com.distribute.remoting.bean.JobFinishDetail">
         select <include refid="Base_JobDetail_List" />
         from `jobDetail` where job_id = #{jobId} and exec_id= #{execId}
     </select>

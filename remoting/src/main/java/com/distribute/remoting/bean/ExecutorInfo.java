@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class executorInfo {
+public class ExecutorInfo {
 
     private String name;
 

@@ -1,21 +1,21 @@
 package com.distribute.remoting.strategy;
 
-import com.distribute.remoting.bean.executorInfo;
+import com.distribute.remoting.bean.ExecutorInfo;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.PriorityQueue;
 import java.util.Queue;
 
-public class shardStrategy extends strategy{
+public class ShardStrategy extends Strategy {
     @Override
-    public List<String> route(List<executorInfo> infos,Integer shardParam) {
+    public List<String> route(List<ExecutorInfo> infos, Integer shardParam) {
         if(infos==null)return null;
         int num=infos.size();
 
         List<String>result=new ArrayList<>();
         if(num<=shardParam){
-            for (executorInfo info : infos) {
+            for (ExecutorInfo info : infos) {
                 String name = info.getName();
                 result.add(name);
             }
@@ -24,7 +24,7 @@ public class shardStrategy extends strategy{
             //从num个机器中选择shardParam个机器出来分片完成任务
             //首先根据优先级来定，优先级高的先选;再根据已完成任务数，完成任务数少的先选
             Queue<compare>queue=new PriorityQueue<>();
-            for (executorInfo info : infos) {
+            for (ExecutorInfo info : infos) {
                 queue.add(new compare(info));
             }
             int choose=0;
@@ -50,9 +50,9 @@ public class shardStrategy extends strategy{
 //
 //    }
     static class compare implements Comparable<compare>{
-        private executorInfo i;
+        private ExecutorInfo i;
 
-        public compare(executorInfo i){
+        public compare(ExecutorInfo i){
             this.i=i;
         }
         @Override

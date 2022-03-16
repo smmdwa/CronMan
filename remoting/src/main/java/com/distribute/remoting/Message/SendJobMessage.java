@@ -1,6 +1,6 @@
 package com.distribute.remoting.Message;
 
-import com.distribute.remoting.bean.jobBean;
+import com.distribute.remoting.bean.JobBean;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class SendJobMessage extends Message{
-    public SendJobMessage(jobBean job, Integer shardIndex, Integer shardTotal,Long requestId,Integer execId) {
+    public SendJobMessage(JobBean job, Integer shardIndex, Integer shardTotal, Long requestId, Integer execId) {
         this.job = job;
         this.shardIndex = shardIndex;
         this.shardTotal = shardTotal;
@@ -22,7 +22,7 @@ public class SendJobMessage extends Message{
         return SendJobMessage;
     }
 
-    private jobBean job;
+    private JobBean job;
 
     private Integer shardIndex;
 

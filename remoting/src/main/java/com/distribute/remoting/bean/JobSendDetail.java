@@ -8,11 +8,11 @@ import lombok.Data;
 
 @Data
 @AllArgsConstructor
-public class jobSendDetail {
+public class JobSendDetail {
     //将要发送的job信息
     private Long jobId;
 
-    private jobBean job;
+    private JobBean job;
 
     private Channel channel;
 

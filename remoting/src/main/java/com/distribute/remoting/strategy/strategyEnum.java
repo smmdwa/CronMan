@@ -1,22 +1,20 @@
 package com.distribute.remoting.strategy;
 
-import lombok.Data;
-
 
 public enum strategyEnum {
 
-    shardStrategy("shard",new shardStrategy()),
-    randomStrategy("random",new randomStrategy()),
+    shardStrategy("shard",new ShardStrategy()),
+    randomStrategy("random",new RandomStrategy()),
     lruStrategy("lru",new lruStrategy());
 
     private String name;
 
     public String getName(){return this.name;}
-    private strategy strategy;
+    private Strategy strategy;
 
-    public strategy getStrategy(){return this.strategy;}
+    public Strategy getStrategy(){return this.strategy;}
 
-    strategyEnum(String name,strategy strategy){
+    strategyEnum(String name, Strategy strategy){
         this.name=name;
         this.strategy=strategy;
     }

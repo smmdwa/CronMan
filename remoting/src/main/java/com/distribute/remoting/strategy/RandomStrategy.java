@@ -1,15 +1,15 @@
 package com.distribute.remoting.strategy;
 
-import com.distribute.remoting.bean.executorInfo;
+import com.distribute.remoting.bean.ExecutorInfo;
 
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
 
-public class randomStrategy extends strategy {
+public class RandomStrategy extends Strategy {
     @Override
-    public List<String> route(List<executorInfo> infos, Integer shardParam) {
+    public List<String> route(List<ExecutorInfo> infos, Integer shardParam) {
         if(infos==null||infos.size()<shardParam)return null;
         //随机取shardParam个数
         HashSet<Integer>set=new HashSet<>();

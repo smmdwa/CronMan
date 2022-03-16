@@ -8,13 +8,13 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class jobExecInfo {
+public class JobExecInfo {
 
     private String name;
 
     private Long jobId;
 
-    private jobBean job;
+    private JobBean job;
 
     /**
      * 状态，0表示未开始，1表示执行中，2表示已完成  3表示等待依赖任务执行

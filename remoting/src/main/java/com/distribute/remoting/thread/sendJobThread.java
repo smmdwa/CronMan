@@ -1,9 +1,7 @@
 package com.distribute.remoting.thread;
 
-import com.distribute.remoting.Message.CallBackMessage;
 import com.distribute.remoting.Message.SendJobMessage;
-import com.distribute.remoting.bean.jobFinishDetail;
-import com.distribute.remoting.bean.jobSendDetail;
+import com.distribute.remoting.bean.JobSendDetail;
 import com.distribute.remoting.netty_server.NettyServer;
 import com.distribute.remoting.utils.Context;
 import lombok.extern.slf4j.Slf4j;
@@ -14,8 +12,8 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 @Slf4j
 public class sendJobThread extends Thread{
-    private LinkedBlockingQueue<jobSendDetail> jobToBeTransferQueue;
-    public static void pushSendJob(jobSendDetail detail){
+    private LinkedBlockingQueue<JobSendDetail> jobToBeTransferQueue;
+    public static void pushSendJob(JobSendDetail detail){
         getInstance().jobToBeTransferQueue.add(detail);
     }
 
@@ -42,15 +40,15 @@ public class sendJobThread extends Thread{
     public void run() {
         while (true){
             try {
-                jobSendDetail msg = this.jobToBeTransferQueue.take();
+                JobSendDetail msg = this.jobToBeTransferQueue.take();
                 // 拿到要发送的msg
-                List<jobSendDetail> callbackParamList = new ArrayList<>();
+                List<JobSendDetail> callbackParamList = new ArrayList<>();
                 this.jobToBeTransferQueue.drainTo(callbackParamList);
                 callbackParamList.add(msg);
 
                 NettyServer server= (NettyServer)Context.getBean(NettyServer.class);
                 // 发送msg
-                for(jobSendDetail message:callbackParamList){
+                for(JobSendDetail message:callbackParamList){
                     server.sendMessage(new SendJobMessage(message.getJob(), message.getIndex(),message.getTotal(),message.getExecId(),msg.getContents(),msg.getIsCompresses()),0,message.getChannel());
                 }
                 log.info("sendJobThread success");

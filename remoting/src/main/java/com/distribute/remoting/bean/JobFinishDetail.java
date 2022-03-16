@@ -7,14 +7,14 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class jobFinishDetail {
+public class JobFinishDetail {
 
     private Long jobId;
 
     //任务执行的id，第几次执行，初始化为0
     private Integer execId;
 
-    private jobBean job;
+    private JobBean job;
 
     private Integer code;//0初始 200完成 300任务出错 400对应的executor断线
 

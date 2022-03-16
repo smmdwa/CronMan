@@ -11,7 +11,7 @@ import java.util.List;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class jobBean implements Serializable {
+public class JobBean implements Serializable {
 
     private long jobId;
 

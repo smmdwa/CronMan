@@ -1,7 +1,7 @@
 package com.distribute.remoting.controller;
 
-import com.distribute.remoting.bean.jobBean;
-import com.distribute.remoting.bean.returnMSG;
+import com.distribute.remoting.bean.JobBean;
+import com.distribute.remoting.bean.ReturnMSG;
 import com.distribute.remoting.netty_server.NameServerController;
 import com.distribute.remoting.utils.DataUtil;
 import com.google.gson.Gson;
@@ -22,7 +22,7 @@ public class AddController {
     NameServerController controller;
     @ResponseBody
     @PostMapping("/add")
-    public returnMSG get(@RequestBody Map map) {
+    public ReturnMSG get(@RequestBody Map map) {
 //        System.out.println(map);
         List<Long> jobs=null;
         if(map.get("jobs")!=null)
@@ -33,7 +33,7 @@ public class AddController {
         int code=200;
         //进行基础的校验
         //1.有上游任务 但是又是被动任务，添加失败
-        if(pids==null && (String.valueOf(map.get("jobType")).equals(jobBean.java_passive)||String.valueOf(map.get("jobType")).equals(jobBean.shell_passive))){
+        if(pids==null && (String.valueOf(map.get("jobType")).equals(JobBean.java_passive)||String.valueOf(map.get("jobType")).equals(JobBean.shell_passive))){
             msg="被动任务必须含有依赖任务！";
             code=300;
         }else if(!controller.isExistTheJob(pids)||(jobs!=null&&jobs.size()==1&&jobs.get(0)==-1L)){
@@ -44,10 +44,10 @@ public class AddController {
         //3.如果有上游任务，判断是否会成环 todo? 不可能成环？
 
         if(code!=200){
-            returnMSG jobVO = new returnMSG(code,msg,null,0);
+            ReturnMSG jobVO = new ReturnMSG(code,msg,null,0);
             return jobVO;
         }
-        returnMSG returnMSG = controller.addJobController(
+        ReturnMSG returnMSG = controller.addJobController(
                 String.valueOf(map.get("name")),
                 pids,
                 String.valueOf(map.get("className")),

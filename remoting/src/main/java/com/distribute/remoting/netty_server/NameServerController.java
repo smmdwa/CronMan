@@ -16,9 +16,7 @@ import com.distribute.remoting.response.defaultFuture;
 import com.distribute.remoting.thread.sendJobThread;
 import com.distribute.remoting.utils.*;
 import io.netty.channel.Channel;
-import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.DependsOn;
@@ -28,7 +26,6 @@ import org.springframework.stereotype.Component;
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import javax.sql.DataSource;
-import java.lang.reflect.InvocationTargetException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -36,7 +33,6 @@ import java.text.ParseException;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 @Data
 @Slf4j
@@ -63,7 +59,7 @@ public class NameServerController {
     //用来控制toBeRingThread的唤醒和睡眠
     private final Object obj=new Object();
 
-    private final  ConcurrentHashMap<Long, jobExecInfo> jobTable=new ConcurrentHashMap<>(128);
+    private final  ConcurrentHashMap<Long, JobExecInfo> jobTable=new ConcurrentHashMap<>(128);
 
     private ThreadPoolExecutor sendExecutor;
 
@@ -147,21 +143,21 @@ public class NameServerController {
     }
 
     //添加任务的入口，构造jobBean
-    public returnMSG addJobController(String name,String pids,String className,String methodName,String paramType,String params,String cronExpr,Integer shardNum,boolean transfer,boolean reStart,String policy,String jobType,String shell){
-        jobBean job;
+    public ReturnMSG addJobController(String name, String pids, String className, String methodName, String paramType, String params, String cronExpr, Integer shardNum, boolean transfer, boolean reStart, String policy, String jobType, String shell){
+        JobBean job;
         long id = new idUtil().nextId();
         //-1代表依赖任务是自己
         if("-1".equals(pids)) pids=String.valueOf(id);
         //是否是主动任务
-        if(jobBean.java_normal.equals(jobType)){
-            job = new jobBean(id,pids,className,methodName,paramType,params,name,cronExpr,shardNum,transfer,reStart,policy,new Date(),new Date(),getNextStartTime(cronExpr),jobBean.init,0,jobType,jobBean.enabled,null);
-        }else if(jobBean.shell_normal.equals(jobType)){
-            job = new jobBean(id,pids,className,methodName,paramType,params,name,cronExpr,shardNum,transfer,reStart,policy,new Date(),new Date(),getNextStartTime(cronExpr),jobBean.init,0,jobType,jobBean.enabled,shell);
-        }else if(jobBean.java_passive.equals(jobType)){
-            job = new jobBean(id,pids,className,methodName,paramType,params,name,cronExpr,shardNum,transfer,reStart,policy,new Date(),new Date(),0L,jobBean.waiting,0,jobType,jobBean.enabled,null);
+        if(JobBean.java_normal.equals(jobType)){
+            job = new JobBean(id,pids,className,methodName,paramType,params,name,cronExpr,shardNum,transfer,reStart,policy,new Date(),new Date(),getNextStartTime(cronExpr), JobBean.init,0,jobType, JobBean.enabled,null);
+        }else if(JobBean.shell_normal.equals(jobType)){
+            job = new JobBean(id,pids,className,methodName,paramType,params,name,cronExpr,shardNum,transfer,reStart,policy,new Date(),new Date(),getNextStartTime(cronExpr), JobBean.init,0,jobType, JobBean.enabled,shell);
+        }else if(JobBean.java_passive.equals(jobType)){
+            job = new JobBean(id,pids,className,methodName,paramType,params,name,cronExpr,shardNum,transfer,reStart,policy,new Date(),new Date(),0L, JobBean.waiting,0,jobType, JobBean.enabled,null);
         }
         else{
-            job = new jobBean(id,pids,className,methodName,paramType,params,name,cronExpr,shardNum,transfer,reStart,policy,new Date(),new Date(),0L,jobBean.waiting,0,jobType,jobBean.enabled,shell);
+            job = new JobBean(id,pids,className,methodName,paramType,params,name,cronExpr,shardNum,transfer,reStart,policy,new Date(),new Date(),0L, JobBean.waiting,0,jobType, JobBean.enabled,shell);
         }
         log.info("new job:"+job);
         try {
@@ -170,11 +166,11 @@ public class NameServerController {
 
         } catch (Exception e) {
             e.printStackTrace();
-            return new returnMSG<ResultDAG>(500,"error",null,0);
+            return new ReturnMSG<ResultDAG>(500,"error",null,0);
         }finally {
             lock.writeLock().unlock();
         }
-        return new returnMSG<ResultDAG>(200,"success",null,0);
+        return new ReturnMSG<ResultDAG>(200,"success",null,0);
     }
 
     //替换换行符
@@ -189,19 +185,19 @@ public class NameServerController {
         return shellValue;
     }
     //获取任务依赖图的入口
-    public returnMSG getDagController(Long jobId){
+    public ReturnMSG getDagController(Long jobId){
         try {
             lock.readLock().lockInterruptibly();
-            List<jobBean> allJob = mapper.getAllJob();
+            List<JobBean> allJob = mapper.getAllJob();
             //构造dag
             List<NodeDAG>nodes=new ArrayList<>();
-            for (jobBean jobBean : allJob) {
+            for (JobBean jobBean : allJob) {
                 nodes.add(new NodeDAG(jobBean.getName(),jobBean.getJobId()));
             }
             Dag dag = new Dag(nodes);
             //构造dag边
             List<RelationDAG>relations=new ArrayList<>();
-            for (jobBean jobBean : allJob) {
+            for (JobBean jobBean : allJob) {
                 if(jobBean.getPids()==null)continue;
                 List<Long> list = DataUtil.transferLong(jobBean.getPids());
                 for (Long aLong : list) {
@@ -216,10 +212,10 @@ public class NameServerController {
             for (NodeDAG nodeDAG : nodeDAGS) {
                 nodeDAG.setStatus(mapper.getJobById(nodeDAG.getJobId()).getStatus());
             }
-            return new returnMSG<ResultDAG>(200,"success",new ResultDAG(nodeDAGS,relations),0);
+            return new ReturnMSG<ResultDAG>(200,"success",new ResultDAG(nodeDAGS,relations),0);
         } catch (Exception e) {
             e.printStackTrace();
-            return new returnMSG<ResultDAG>(500,"error",null,0);
+            return new ReturnMSG<ResultDAG>(500,"error",null,0);
         }finally {
             lock.readLock().unlock();
         }
@@ -231,7 +227,7 @@ public class NameServerController {
         try {
             lock.readLock().lockInterruptibly();
             for (Long aLong : list) {
-                jobBean jobById = mapper.getJobById(aLong);
+                JobBean jobById = mapper.getJobById(aLong);
                 if(jobById==null)return false;
             }
 
@@ -243,32 +239,32 @@ public class NameServerController {
         return true;
     }
 
-    public returnMSG<List<jobBean>> getJobController(){
+    public ReturnMSG<List<JobBean>> getJobController(){
         try {
             lock.readLock().lockInterruptibly();
-            List<jobBean> allJob = mapper.getAllJob();
-            return new returnMSG<List<jobBean>>(200,"success",allJob,allJob.size());
+            List<JobBean> allJob = mapper.getAllJob();
+            return new ReturnMSG<List<JobBean>>(200,"success",allJob,allJob.size());
         } catch (InterruptedException e) {
             e.printStackTrace();
-            return new returnMSG<List<jobBean>>(500,"error",null,0);
+            return new ReturnMSG<List<JobBean>>(500,"error",null,0);
         }finally {
             lock.readLock().unlock();
         }
     }
 
-    public returnMSG killJob(Long jobId){
+    public ReturnMSG killJob(Long jobId){
         //先判断是否需要kill 如果status为已经停用，就不再调用了
         try {
             lock.writeLock().lockInterruptibly();
-            jobBean jobById = mapper.getJobById(jobId);
-            if(jobById.getStatus()==jobBean.stopped){
-                return new returnMSG<List<jobBean>>(500,"任务已经停用",null,0);
+            JobBean jobById = mapper.getJobById(jobId);
+            if(jobById.getStatus()== JobBean.stopped){
+                return new ReturnMSG<List<JobBean>>(500,"任务已经停用",null,0);
             }
 
-            List<executorLiveInfo> infos = this.routemanager.getAllExecutorInfo(jobId);
-            if(infos==null)return new returnMSG<List<jobBean>>(200,"success",null,0);
+            List<ExecutorLiveInfo> infos = this.routemanager.getAllExecutorInfo(jobId);
+            if(infos==null)return new ReturnMSG<List<JobBean>>(200,"success",null,0);
             //向所有jobId关联的executor 发送消息
-            for (executorLiveInfo info : infos) {
+            for (ExecutorLiveInfo info : infos) {
                 //生成future记录，根据requestId 获取对应结果
                 defaultFuture future = new defaultFuture();
                 Long requestId=idGenerator.nextLongId();
@@ -282,28 +278,28 @@ public class NameServerController {
                 if(msg==null){
                     //超时 认为任务失败
                     log.info("kill job timeout");
-                    return new returnMSG<List<jobBean>>(500,"Kill任务超时",null,0);
+                    return new ReturnMSG<List<JobBean>>(500,"Kill任务超时",null,0);
                 }else {
                     int code = msg.getCode();
                     if(code==ResponseMessage.error){
                         log.info("kill job fail");
-                        return new returnMSG<List<jobBean>>(500,"Kill任务错误",null,0);
+                        return new ReturnMSG<List<JobBean>>(500,"Kill任务错误",null,0);
                     }
                 }
             }
 
             //修改状态为stopped
-            mapper.updateJobStatusById(jobId,jobBean.stopped);
+            mapper.updateJobStatusById(jobId, JobBean.stopped);
 
         } catch (InterruptedException e) {
             e.printStackTrace();
         }finally {
             lock.writeLock().unlock();
         }
-        return new returnMSG(200,"success",null,0);
+        return new ReturnMSG(200,"success",null,0);
     }
 
-    public returnMSG DeleteJob(Long jobId){
+    public ReturnMSG DeleteJob(Long jobId){
 
         //先killJob 再设置enable=1
         killJob(jobId);
@@ -313,33 +309,33 @@ public class NameServerController {
             mapper.updateJobDisable(jobId);
         } catch (InterruptedException e) {
             e.printStackTrace();
-            return new returnMSG(500,"error",null,0);
+            return new ReturnMSG(500,"error",null,0);
         }finally {
             lock.writeLock().unlock();
         }
-        return new returnMSG(200,"success",null,0);
+        return new ReturnMSG(200,"success",null,0);
     }
 
-    public returnMSG StartJob(Long jobId){
+    public ReturnMSG StartJob(Long jobId){
         //先判断是否需要start 如果status不为已停止，就不再调用了
         try {
             lock.writeLock().lockInterruptibly();
-            jobBean jobById = mapper.getJobById(jobId);
-            if(jobById.getStatus()!=jobBean.stopped){
-                return new returnMSG(500,"任务已经启用",null,0);
+            JobBean jobById = mapper.getJobById(jobId);
+            if(jobById.getStatus()!= JobBean.stopped){
+                return new ReturnMSG(500,"任务已经启用",null,0);
             }
             //修改mapper状态
-            if(jobBean.java_passive.equals(jobById.getJobType())||jobBean.shell_passive.equals(jobById.getJobType()))
-                mapper.updateJobStatusById(jobId,jobBean.waiting);
+            if(JobBean.java_passive.equals(jobById.getJobType())|| JobBean.shell_passive.equals(jobById.getJobType()))
+                mapper.updateJobStatusById(jobId, JobBean.waiting);
             else
-                mapper.updateJobStatusById(jobId,jobBean.init);
+                mapper.updateJobStatusById(jobId, JobBean.init);
         } catch (InterruptedException e) {
             e.printStackTrace();
-            return new returnMSG(500,"error",null,0);
+            return new ReturnMSG(500,"error",null,0);
         }finally {
             lock.writeLock().unlock();
         }
-        return new returnMSG(200,"success",null,0);
+        return new ReturnMSG(200,"success",null,0);
     }
 
     //启动前 5秒 读取任务
@@ -356,7 +352,7 @@ public class NameServerController {
             lock.readLock().lockInterruptibly();
             List<Long> list = DataUtil.transferLong(pids);
             for(Long a:list){
-                jobBean jobById = mapper.getJobById(a);
+                JobBean jobById = mapper.getJobById(a);
                 long before=jobById.getUpdateTime().getTime();
                 if(System.currentTimeMillis()-before>dependNormalTime){
                     return false;
@@ -395,7 +391,7 @@ public class NameServerController {
                         preparedStatement.execute();
                         long readTime=System.currentTimeMillis();
 
-                        List<jobBean> jobList = mapper.getToBeRunJob(readTime+fetchTime);
+                        List<JobBean> jobList = mapper.getToBeRunJob(readTime+fetchTime);
 
                         if(jobList==null||jobList.size()==0)
                             continue;
@@ -404,9 +400,9 @@ public class NameServerController {
                         // 1. <=90 任务过期 根据错过重触发策略判断是否要触发
                         // 2. 90-95 任务可能因为调度问题而错过上一次的调度
                         // 3. >95 正常放入时间轮
-                        for (jobBean job : jobList) {
+                        for (JobBean job : jobList) {
                             //被动任务直接跳过 依赖任务先判断依赖任务是否全部完成
-                            if(jobBean.java_passive.equals(job.getJobType())||jobBean.shell_passive.equals(job.getJobType())) {
+                            if(JobBean.java_passive.equals(job.getJobType())|| JobBean.shell_passive.equals(job.getJobType())) {
                                 continue;
                             }else if(job.getPids()!=null&&job.getPids().length()!=0&&!isDependFinishNormal(job.getPids())){
                                 continue;
@@ -440,10 +436,10 @@ public class NameServerController {
                         }
                         //修改job 主要是修改nextStartTime来避免竞争
                         //修改jobTable 更改状态
-                        for (jobBean job : jobList) {
-                            if(jobBean.java_passive.equals(job.getJobType())||jobBean.shell_passive.equals(job.getJobType()))
+                        for (JobBean job : jobList) {
+                            if(JobBean.java_passive.equals(job.getJobType())|| JobBean.shell_passive.equals(job.getJobType()))
                                 continue;
-                            job.setStatus(jobBean.doing);
+                            job.setStatus(JobBean.doing);
                             mapper.update(job);
                         }
                         log.info("更改完成");
@@ -553,7 +549,7 @@ public class NameServerController {
         }
     }
 
-    private void sendJobToExecutor(jobBean jojo){
+    private void sendJobToExecutor(JobBean jojo){
         //推送给executor
         sendExecutor.submit(new Runnable() {
             @Override
@@ -619,11 +615,11 @@ public class NameServerController {
                 //检查是否全部完成
                 if(isFinish(jobId,execId)){
                     //更新jobBean状态
-                    jobBean job = mapper.getJobById(jobId);
-                    if(jobBean.java_passive.equals(job.getJobType())||jobBean.shell_passive.equals(job.getJobType())){
-                        mapper.updateJobFinish(jobId,jobBean.waiting,new Date());
+                    JobBean job = mapper.getJobById(jobId);
+                    if(JobBean.java_passive.equals(job.getJobType())|| JobBean.shell_passive.equals(job.getJobType())){
+                        mapper.updateJobFinish(jobId, JobBean.waiting,new Date());
                     }else{
-                        mapper.updateJobFinish(jobId,jobBean.init,new Date());
+                        mapper.updateJobFinish(jobId, JobBean.init,new Date());
                     }
                     //检查是否有依赖任务可以发送
                     dependFinish();
@@ -647,9 +643,9 @@ public class NameServerController {
     private boolean isFinish(Long jobId,Integer execId){
         try {
             lock.readLock().lockInterruptibly();
-            List<jobFinishDetail>details=mapper.getJobDetail(jobId,execId);
+            List<JobFinishDetail>details=mapper.getJobDetail(jobId,execId);
             if(details==null)return false;
-            for (jobFinishDetail detail : details) {
+            for (JobFinishDetail detail : details) {
                 if(detail.getCode()!=ResultEnum.success.result){
                     return false;
                 }
@@ -671,17 +667,17 @@ public class NameServerController {
     private void dependFinish(){
         try {
             lock.writeLock().lockInterruptibly();
-            List<jobBean> allJob = mapper.getAllJob();
-            for (jobBean job:allJob) {
-                if(job.getStatus()!=jobBean.waiting){
+            List<JobBean> allJob = mapper.getAllJob();
+            for (JobBean job:allJob) {
+                if(job.getStatus()!= JobBean.waiting){
                     continue;
                 }
-                if(jobBean.java_passive.equals(job.getJobType())||jobBean.shell_passive.equals(job.getJobType())){
+                if(JobBean.java_passive.equals(job.getJobType())|| JobBean.shell_passive.equals(job.getJobType())){
                     //为被动依赖任务 判断是否他的pid任务是否全部完成
                     List<Long>pids= DataUtil.transferLong(job.getPids());
                     boolean result=true;
                     for (Long pid : pids) {
-                        jobBean fatherJob = mapper.getJobById(pid);
+                        JobBean fatherJob = mapper.getJobById(pid);
                         long before=fatherJob.getUpdateTime().getTime();
                         if(System.currentTimeMillis()-before>dependInTime){
                             result=false;
@@ -697,7 +693,7 @@ public class NameServerController {
                         log.info("被动依赖任务发送"+job);
                         //全部完成，可以发送
                         //因为是被动任务，所以不需要设置nextStartTime
-                        mapper.updateJobStatusById(job.getJobId(),jobBean.doing);
+                        mapper.updateJobStatusById(job.getJobId(), JobBean.doing);
                         sendJobToExecutor(job);//todo 记得修改jobtable和nextstarttime状态  要上锁
                     }
                 }

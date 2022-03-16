@@ -1,6 +1,5 @@
 package com.distribute.remoting.Message;
 
-import com.distribute.remoting.bean.jobBean;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
