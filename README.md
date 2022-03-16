@@ -113,13 +113,10 @@ CronMan 可以分为三大模块（调度器集群、控制中心和执行器集
 
 
 
-- 一般场景
-
 <div align=center><img src="resource/design-1.png" width="650"/></div>
 
 
 
-- 复杂场景
 
 <div align=center><img src="resource/design-2.png" width="750"/></div>
 
